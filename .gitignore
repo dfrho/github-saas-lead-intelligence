@@ -1,0 +1,41 @@
+# Dependencies
+venv/
+__pycache__/
+*.egg-info/
+dist/
+build/
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+.venv
+env/
+ENV/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Runtime data
+data/registry.json
+reports/
+
