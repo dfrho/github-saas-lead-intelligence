@@ -16,7 +16,8 @@ Monitors GitHub repositories for engineering activity and converts code changes 
 │   ├── cli.py                 ← CLI for managing registry
 │   └── services/
 │       ├── registry.py        ← Registry persistence (data/registry.json)
-│       └── github_api.py      ← GitHub API wrapper (PyGithub)
+│       ├── github_api.py      ← GitHub API wrapper (PyGithub)
+│       └── claude_api.py      ← Anthropic API wrapper (summarize, classify, news)
 ├── data/
 │   └── registry.json          ← Watched repos (auto-managed, .gitignored)
 ├── reports/                   ← Generated lead reports (Phase 3+)
@@ -96,6 +97,10 @@ After registration:
   - `watch_repo("facebook", "react", "React")`
   - `list_watched_repos()`
   - `fetch_repo_activity("facebook", "react")`
+  - `summarize_activity("facebook", "react")`
+  - `classify_signal("They are migrating to Kafka and adding Prometheus metrics.")`
+  - `fetch_contributor_profiles("facebook", "react")`
+  - `fetch_company_news("facebook", org_domain="meta.com")`
 
 ### 5. Add Repositories to Watch
 
@@ -134,36 +139,128 @@ python src/main.py
 
 The server listens on stdin/stdout for MCP protocol messages.
 
-## MCP Tools (Phase 1)
+## MCP Tools
 
-### `watch_repo(owner, repo, label?)`
+### Phase 1 — Activity Collection
+
+#### `watch_repo(owner, repo, label?)`
+
 Add a GitHub repository to the watched registry.
-```python
-# Watch a repo
-watch_repo("facebook", "react", "React.js")
 
+```python
+watch_repo("facebook", "react", "React.js")
 # Returns: "Watching facebook/react (label: "React.js"). Added at 2026-04-18T10:00:00Z"
 ```
 
-### `list_watched_repos()`
+#### `list_watched_repos()`
+
 List all repositories in the registry with last-checked status.
+
 ```python
+list_watched_repos()
 # Returns: All entries with timestamps, labels, and last activity hash
 ```
 
-### `fetch_repo_activity(owner, repo, since?, force?)`
-Fetch commits, pull requests, and issues since a date. Smart deduplication via `last_activity_hash` prevents redundant fetches.
+#### `fetch_repo_activity(owner, repo, since?, force?)`
+
+Fetch commits, pull requests, and issues since a date. Smart deduplication via `last_activity_hash` skips repos with no new commits.
+
 ```python
 fetch_repo_activity("facebook", "react", since="2026-04-01T00:00:00Z")
-
-# Returns: {
-#   "commits": [...],
-#   "pull_requests": [...],
-#   "issues": [...],
-#   "latest_commit_sha": "abc123...",
-#   "fetched_at": "2026-04-18T10:05:00Z"
-# }
+# Returns: { "commits": [...], "pull_requests": [...], "issues": [...], "latest_commit_sha": "abc123..." }
 ```
+
+Parameters:
+
+- `since` — ISO 8601 date string; defaults to 30 days ago
+- `force` — set `true` to re-fetch even if head commit hasn't changed
+
+---
+
+### Phase 2 — Enrichment
+
+#### `analyze_repo(owner, repo, since?)`
+
+Shorthand that chains `summarize_activity` → `classify_signal` in a single call. Returns both the synopsis and the ranked domain list.
+
+```python
+analyze_repo("facebook", "react")
+# Returns:
+# Analysis for facebook/react
+#
+# Synopsis:
+# The team is migrating the React Native renderer...
+#
+# Signals (3 domains matched):
+#   [HIGH] messaging_event_streaming — Kafka integration in renderer pipeline.
+#   [MEDIUM] observability_monitoring — New tracing hooks added.
+#   [LOW] cicd_devops — Minor CI config changes.
+```
+
+Parameters:
+
+- `since` — ISO 8601 date string; defaults to 30 days ago
+
+---
+
+#### `summarize_activity(owner, repo, since?, force?)`
+
+Fetch recent GitHub activity and use Claude to produce a 2–3 sentence technical synopsis of what the team is actively building. Useful as input to `classify_signal`.
+
+```python
+summarize_activity("stripe", "stripe-python")
+# Returns: "The team is actively refactoring their HTTP client layer and adding
+#  structured logging throughout the SDK. Recent PRs suggest preparation for
+#  async support and a new retry-with-backoff strategy."
+```
+
+#### `classify_signal(summary)`
+
+Map a synopsis to SaaS domain categories with confidence levels (`high`, `medium`, `low`) and a one-sentence rationale for each. Pass the output of `summarize_activity` directly.
+
+```python
+classify_signal("The team is adding Prometheus metrics and OpenTelemetry tracing.")
+# Returns: [
+#   { "domain": "observability_monitoring", "confidence": "high", "reasoning": "..." },
+#   { "domain": "infrastructure_iac",       "confidence": "low",  "reasoning": "..." }
+# ]
+```
+
+Recognized domains: `observability_monitoring`, `auth_identity_sso`, `messaging_event_streaming`, `data_pipeline_etl`, `cicd_devops`, `database_data_storage`, `security_compliance`, `search`, `feature_flags`, `api_gateway_service_mesh`, `testing_qa`, `infrastructure_iac`, `cdn_edge_networking`, `payments_billing`, `notifications_comms`, `ml_ai_platform`, `analytics_bi`, `support_ticketing`, `ecommerce`, `marketing_communications`
+
+#### `fetch_contributor_profiles(owner, repo, max_contributors?)`
+
+Fetch GitHub profile data for the top contributors: name, company, location, bio, follower count, and public org memberships. Useful for identifying decision-makers and their prior employers.
+
+```python
+fetch_contributor_profiles("vercel", "next.js", max_contributors=5)
+# Returns: [
+#   { "login": "...", "name": "...", "company": "Vercel",
+#     "orgs": ["vercel", "nextjs"], "contributions": 4821, ... },
+#   ...
+# ]
+```
+
+Parameters:
+
+- `max_contributors` — number of top contributors to fetch; defaults to 10
+
+#### `fetch_company_news(owner, org_domain?)`
+
+Search for recent news about the company behind a GitHub org using Claude's web search: funding rounds, product launches, technical blog posts, hiring surges, and partnerships.
+
+```python
+fetch_company_news("stripe", org_domain="stripe.com")
+# Returns: [
+#   { "title": "Stripe raises $694M Series I", "type": "funding",
+#     "date": "2023-03-15", "url": "...", "snippet": "..." },
+#   ...
+# ]
+```
+
+Parameters:
+
+- `org_domain` — explicit company domain (e.g. `"stripe.com"`) for more targeted search; defaults to searching by org name
 
 ## Registry Schema
 
@@ -196,9 +293,8 @@ See **[IMPLEMENTATION.md](IMPLEMENTATION.md)** for:
 
 ## Next Phases
 
-- **Phase 2** — Enrichment (fetch_contributor_profiles, fetch_company_news, classify_signal)
-- **Phase 3** — Report assembly (recommend_saas_vendors, generate_lead_report)
-- **Phase 4** — Testing and polish
+- **Phase 3** — Report assembly (`recommend_saas_vendors`, `generate_lead_report`)
+- **Phase 4** — Testing and polish on real repos
 
 See [CLAUDE.md](CLAUDE.md) for the full phased build plan.
 

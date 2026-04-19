@@ -50,6 +50,20 @@ class RepoActivity:
     latest_commit_sha: Optional[str]  # SHA of the most recent commit
 
 
+@dataclass
+class ContributorProfile:
+    """GitHub profile data for a repository contributor."""
+    login: str
+    name: Optional[str]
+    company: Optional[str]
+    location: Optional[str]
+    bio: Optional[str]
+    public_repos: int
+    followers: int
+    contributions: int  # contributions to this specific repo
+    orgs: list[str]    # public org memberships (logins)
+
+
 def _get_github_client() -> Github:
     """Create and return a GitHub API client."""
     token = os.getenv("GITHUB_TOKEN")
@@ -189,3 +203,60 @@ def fetch_repo_activity(
         issues=issues,
         latest_commit_sha=latest_commit_sha,
     )
+
+
+def fetch_contributor_profiles(
+    owner: str,
+    repo: str,
+    max_contributors: int = 10,
+) -> list[ContributorProfile]:
+    """
+    Fetch GitHub profile data for the top contributors of a repository.
+
+    Args:
+        owner: GitHub organization or user name
+        repo: Repository name
+        max_contributors: Maximum number of contributors to fetch (default 10)
+
+    Returns:
+        List of ContributorProfile objects sorted by contribution count (descending)
+    """
+    github = _get_github_client()
+    repo_obj = github.get_repo(f"{owner}/{repo}")
+
+    contributors = list(repo_obj.get_contributors()[:max_contributors])
+
+    def _fetch_profile(contributor) -> ContributorProfile:
+        try:
+            user = github.get_user(contributor.login)
+            orgs: list[str] = []
+            try:
+                orgs = [org.login for org in user.get_orgs()][:10]
+            except Exception:
+                pass
+            return ContributorProfile(
+                login=contributor.login,
+                name=user.name,
+                company=user.company,
+                location=user.location,
+                bio=user.bio,
+                public_repos=user.public_repos,
+                followers=user.followers,
+                contributions=contributor.contributions,
+                orgs=orgs,
+            )
+        except Exception:
+            return ContributorProfile(
+                login=contributor.login,
+                name=None,
+                company=None,
+                location=None,
+                bio=None,
+                public_repos=0,
+                followers=0,
+                contributions=contributor.contributions,
+                orgs=[],
+            )
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        return list(executor.map(_fetch_profile, contributors))

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from services import registry, github_api
+from services import registry, github_api, claude_api
 
 
 # Initialize MCP server
@@ -153,6 +153,168 @@ async def fetch_repo_activity(
     return [
         TextContent(type="text", text=summary),
         TextContent(type="text", text=activity_json),
+    ]
+
+
+@server.call_tool()
+async def analyze_repo(
+    owner: str,
+    repo: str,
+    since: str = None,
+) -> list[TextContent]:
+    """
+    Summarize recent GitHub activity for a repository and classify it into
+    SaaS domain categories in a single call. Chains summarize_activity →
+    classify_signal and returns both the synopsis and the ranked domain list.
+    """
+    activity = github_api.fetch_repo_activity(owner, repo, since)
+
+    activity_data = {
+        "owner": activity.owner,
+        "repo": activity.repo,
+        "commits": [{"message": c.message} for c in activity.commits],
+        "pull_requests": [{"title": pr.title} for pr in activity.pull_requests],
+        "issues": [{"title": i.title} for i in activity.issues],
+    }
+
+    synopsis = claude_api.summarize_activity(activity_data)
+    classifications = claude_api.classify_signal(synopsis)
+
+    output = {
+        "owner": owner,
+        "repo": repo,
+        "synopsis": synopsis,
+        "signals": classifications,
+    }
+
+    summary_lines = [
+        f"Analysis for {owner}/{repo}",
+        f"\nSynopsis:\n{synopsis}",
+        f"\nSignals ({len(classifications)} domains matched):",
+    ]
+    for c in classifications:
+        summary_lines.append(f"  [{c.get('confidence', '?').upper()}] {c.get('domain')} — {c.get('reasoning')}")
+
+    return [
+        TextContent(type="text", text="\n".join(summary_lines)),
+        TextContent(type="text", text=json.dumps(output, indent=2)),
+    ]
+
+
+@server.call_tool()
+async def fetch_contributor_profiles(
+    owner: str,
+    repo: str,
+    max_contributors: int = 10,
+) -> list[TextContent]:
+    """
+    Fetch GitHub profile data for the top contributors of a repository:
+    name, company, location, bio, follower count, and public org memberships.
+    """
+    profiles = github_api.fetch_contributor_profiles(owner, repo, max_contributors)
+
+    rows = []
+    for p in profiles:
+        orgs_str = ", ".join(p.orgs) if p.orgs else "none"
+        rows.append(
+            f"• {p.login} ({p.contributions} commits)\n"
+            f"  Name:     {p.name or '—'}\n"
+            f"  Company:  {p.company or '—'}\n"
+            f"  Location: {p.location or '—'}\n"
+            f"  Orgs:     {orgs_str}\n"
+            f"  Bio:      {p.bio or '—'}"
+        )
+    summary = f"Top {len(profiles)} contributors for {owner}/{repo}:\n\n" + "\n\n".join(rows)
+
+    profiles_json = json.dumps(
+        [
+            {
+                "login": p.login,
+                "name": p.name,
+                "company": p.company,
+                "location": p.location,
+                "bio": p.bio,
+                "public_repos": p.public_repos,
+                "followers": p.followers,
+                "contributions": p.contributions,
+                "orgs": p.orgs,
+            }
+            for p in profiles
+        ],
+        indent=2,
+    )
+
+    return [
+        TextContent(type="text", text=summary),
+        TextContent(type="text", text=profiles_json),
+    ]
+
+
+@server.call_tool()
+async def summarize_activity(
+    owner: str,
+    repo: str,
+    since: str = None,
+    force: bool = False,
+) -> list[TextContent]:
+    """
+    Fetch recent GitHub activity for a repository and use Claude to produce a
+    2-3 sentence technical synopsis of what the team is actively building.
+    """
+    activity = github_api.fetch_repo_activity(owner, repo, since)
+
+    activity_data = {
+        "owner": activity.owner,
+        "repo": activity.repo,
+        "commits": [{"message": c.message} for c in activity.commits],
+        "pull_requests": [{"title": pr.title} for pr in activity.pull_requests],
+        "issues": [{"title": i.title} for i in activity.issues],
+    }
+
+    synopsis = claude_api.summarize_activity(activity_data)
+    return [TextContent(type="text", text=synopsis)]
+
+
+@server.call_tool()
+async def classify_signal(
+    summary: str,
+) -> list[TextContent]:
+    """
+    Map an activity synopsis to SaaS domain categories with confidence levels.
+    Returns a ranked list of {domain, confidence, reasoning} objects.
+    """
+    classifications = claude_api.classify_signal(summary)
+    return [TextContent(type="text", text=json.dumps(classifications, indent=2))]
+
+
+@server.call_tool()
+async def fetch_company_news(
+    owner: str,
+    org_domain: str = None,
+) -> list[TextContent]:
+    """
+    Search for recent news about the company behind a GitHub org: funding,
+    product launches, technical blog posts, hiring surges, and partnerships.
+    Optionally provide org_domain (e.g. "stripe.com") to improve search targeting.
+    """
+    news = claude_api.fetch_company_news(owner, org_domain)
+
+    if not news:
+        return [TextContent(type="text", text=f"No recent news found for {owner}.")]
+
+    rows = []
+    for item in news:
+        rows.append(
+            f"[{item.get('type', 'other').upper()}] {item.get('title', '')}\n"
+            f"  Date:    {item.get('date', '—')}\n"
+            f"  URL:     {item.get('url', '—')}\n"
+            f"  Summary: {item.get('snippet', '')}"
+        )
+    summary_text = f"News for {owner} ({len(news)} results):\n\n" + "\n\n".join(rows)
+
+    return [
+        TextContent(type="text", text=summary_text),
+        TextContent(type="text", text=json.dumps(news, indent=2)),
     ]
 
 

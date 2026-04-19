@@ -6,7 +6,13 @@ from unittest.mock import MagicMock, patch
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from services.github_api import fetch_repo_activity, _fetch_commits, _fetch_pull_requests, _fetch_issues
+from services.github_api import (
+    fetch_repo_activity,
+    fetch_contributor_profiles,
+    _fetch_commits,
+    _fetch_pull_requests,
+    _fetch_issues,
+)
 
 
 def _make_commit(sha, name, date_str, message):
@@ -103,3 +109,130 @@ def test_issues_excludes_pull_requests(mock_client):
     result = _fetch_issues(github, "acme", "api", since)
     assert len(result) == 1
     assert result[0].number == 1
+
+
+# ── fetch_contributor_profiles ─────────────────────────────────────────────
+
+def _make_contributor(login, contributions):
+    c = MagicMock()
+    c.login = login
+    c.contributions = contributions
+    return c
+
+
+def _make_user(name=None, company=None, location=None, bio=None, public_repos=5, followers=10, orgs=None):
+    user = MagicMock()
+    user.name = name
+    user.company = company
+    user.location = location
+    user.bio = bio
+    user.public_repos = public_repos
+    user.followers = followers
+    org_mocks = []
+    for org_login in (orgs or []):
+        org = MagicMock()
+        org.login = org_login
+        org_mocks.append(org)
+    user.get_orgs.return_value = org_mocks
+    return user
+
+
+@patch("services.github_api._get_github_client")
+def test_fetch_contributor_profiles_returns_profiles(mock_client):
+    contributor = _make_contributor("alice", 42)
+    user = _make_user(name="Alice Smith", company="Acme Corp", orgs=["acme-org"])
+
+    repo_mock = MagicMock()
+    repo_mock.get_contributors.return_value = [contributor]
+
+    github = mock_client.return_value
+    github.get_repo.return_value = repo_mock
+    github.get_user.return_value = user
+
+    profiles = fetch_contributor_profiles("acme", "api")
+
+    assert len(profiles) == 1
+    p = profiles[0]
+    assert p.login == "alice"
+    assert p.name == "Alice Smith"
+    assert p.company == "Acme Corp"
+    assert p.contributions == 42
+    assert p.orgs == ["acme-org"]
+
+
+@patch("services.github_api._get_github_client")
+def test_fetch_contributor_profiles_fallback_on_user_lookup_failure(mock_client):
+    contributor = _make_contributor("ghost", 5)
+
+    repo_mock = MagicMock()
+    repo_mock.get_contributors.return_value = [contributor]
+
+    github = mock_client.return_value
+    github.get_repo.return_value = repo_mock
+    github.get_user.side_effect = Exception("User not found")
+
+    profiles = fetch_contributor_profiles("acme", "api")
+
+    assert len(profiles) == 1
+    p = profiles[0]
+    assert p.login == "ghost"
+    assert p.contributions == 5
+    assert p.name is None
+    assert p.company is None
+    assert p.orgs == []
+
+
+@patch("services.github_api._get_github_client")
+def test_fetch_contributor_profiles_org_failure_is_nonfatal(mock_client):
+    contributor = _make_contributor("bob", 10)
+    user = _make_user(name="Bob Jones", company="Initech")
+    user.get_orgs.side_effect = Exception("Org lookup failed")
+
+    repo_mock = MagicMock()
+    repo_mock.get_contributors.return_value = [contributor]
+
+    github = mock_client.return_value
+    github.get_repo.return_value = repo_mock
+    github.get_user.return_value = user
+
+    profiles = fetch_contributor_profiles("acme", "api")
+
+    assert len(profiles) == 1
+    p = profiles[0]
+    assert p.orgs == []
+    assert p.name == "Bob Jones"
+    assert p.company == "Initech"
+
+
+@patch("services.github_api._get_github_client")
+def test_fetch_contributor_profiles_respects_max_contributors(mock_client):
+    contributors = [_make_contributor(f"user{i}", i) for i in range(20)]
+    users = {f"user{i}": _make_user(name=f"User {i}") for i in range(20)}
+
+    repo_mock = MagicMock()
+    repo_mock.get_contributors.return_value = contributors
+
+    github = mock_client.return_value
+    github.get_repo.return_value = repo_mock
+    github.get_user.side_effect = lambda login: users[login]
+
+    profiles = fetch_contributor_profiles("acme", "api", max_contributors=5)
+
+    assert len(profiles) == 5
+
+
+@patch("services.github_api._get_github_client")
+def test_fetch_contributor_profiles_orgs_capped_at_10(mock_client):
+    contributor = _make_contributor("alice", 1)
+    user = _make_user(orgs=[f"org{i}" for i in range(20)])
+
+    repo_mock = MagicMock()
+    repo_mock.get_contributors.return_value = [contributor]
+
+    github = mock_client.return_value
+    github.get_repo.return_value = repo_mock
+    github.get_user.return_value = user
+
+    profiles = fetch_contributor_profiles("acme", "api")
+
+    assert len(profiles[0].orgs) == 10
