@@ -73,8 +73,11 @@ See `code_instructions/enrichment_ideas.md` for advanced signal detection ideas 
 - Implement `recommend_saas_vendors(domains)` as a **static curated map** in `src/services/vendor_map.py`
   (not a Claude call — deterministic domain → [{name, url, pitch}] lookup)
 - Add `recommend_outreach_angle(synopsis, signals, news)` to `claude_api.py` — Claude writes the outreach paragraph
-- Implement `generate_lead_report(owner, repo)` — full orchestration: fetches activity, contributors, news,
-  summarizes, classifies, recommends vendors and angle, writes `reports/{owner}__{repo}__{YYYY-MM-DD}.md`
+- Implement `generate_lead_report(owner, repo)` — full orchestration with parallel execution:
+  - Sequential: `fetch_repo_activity` → `summarize_activity` → `classify_signal` (each depends on prior)
+  - Parallel: `fetch_contributor_profiles` + `fetch_company_news` + `recommend_saas_vendors` fire concurrently via `asyncio.gather` once signals are ready
+  - Sequential: `recommend_outreach_angle` (depends on news + signals) → score → write report
+  - Writes `reports/{owner}__{repo}__{YYYY-MM-DD}.md`
 - Implement `run_full_analysis(owner, repo, since?, org_domain?)` — single top-level MCP tool call
 - **Lead scoring weights:** activity 25%, pain_points 25%, dependencies 20% (stubbed at 0), team_size 15%, growth 15%
 - Dependency score stubbed at 0 pending Phase 4 implementation
