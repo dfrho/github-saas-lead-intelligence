@@ -17,19 +17,23 @@ An MCP server that monitors GitHub repositories for engineering activity and con
 ```
 Watched Repo Registry (data/registry.json)
         ↓
-fetch_repo_activity()       ← GitHub API: commits, PRs, issues delta
+fetch_repo_activity()        ← GitHub API: commits, PRs, issues delta
         ↓
-summarize_activity()        ← Claude: what are they building?
+summarize_activity()         ← Claude: what are they building?
         ↓
-classify_signal()           ← Claude: maps synopsis to SaaS domain category
+classify_signal()            ← Claude: maps synopsis to 20 SaaS domain categories
+        ↓
+analyze_repo()               ← Shorthand: summarize_activity → classify_signal in one call
         ↓
 fetch_contributor_profiles() ← GitHub API: handles, orgs, prior employers
         ↓
-fetch_company_news()        ← Web search: blog posts, press releases from repo org domain
+fetch_company_news()         ← Web search: blog posts, press releases from repo org domain
         ↓
-recommend_saas_vendors()    ← Claude: which SaaS cos want this lead?
+recommend_saas_vendors()     ← Static curated map: domain → real SaaS vendor list
         ↓
-generate_lead_report()      ← Assembles full Markdown report to reports/
+generate_lead_report()       ← Assembles full Markdown + JSON report to reports/
+        ↓
+run_full_analysis()          ← Single top-level orchestration call
 ```
 
 ## MCP Tool List
@@ -54,21 +58,37 @@ See `code_instructions/enrichment_ideas.md` for advanced signal detection ideas 
 - Registry uses Python dataclasses, JSON file storage
 - GitHub API calls run in parallel via ThreadPoolExecutor (PyGithub)
 
-### Phase 2 — Enrichment Tools (Next)
+### Phase 2 — Enrichment Tools ✅ **COMPLETE**
+
 - Implement `fetch_contributor_profiles` via PyGithub (user/org lookups, prior employment)
 - Implement `fetch_company_news` using Anthropic API with web_search tool
-- Implement `classify_signal` using Claude API (maps activity to SaaS domain categories)
+- Implement `classify_signal` using Claude API (maps activity to 20 SaaS domain categories)
 - Implement `summarize_activity` using Claude API (what are they building?)
+- Added `analyze_repo` shorthand: chains `summarize_activity` → `classify_signal` in one call
+- SaaS domain taxonomy finalized at 20 categories (added `ecommerce`, `marketing_communications`)
+- 44-test suite covering all services and tool chaining behavior
 
-### Phase 3 — Report Assembly
-- Implement `recommend_saas_vendors` with curated domain → vendor mapping
-- Implement `generate_lead_report` to assemble full Markdown artifact
-- Wire all tools into a single `run_full_analysis(owner, repo)` orchestration call
+### Phase 3 — Report Assembly (Next)
 
-### Phase 4 — Polish + Test
-- Test on 3–5 real repos representing different signal types
-- Refine `classify_signal` categories and vendor recommendations
-- Push to GitHub, update README with example report output
+- Implement `recommend_saas_vendors(domains)` as a **static curated map** in `src/services/vendor_map.py`
+  (not a Claude call — deterministic domain → [{name, url, pitch}] lookup)
+- Add `recommend_outreach_angle(synopsis, signals, news)` to `claude_api.py` — Claude writes the outreach paragraph
+- Implement `generate_lead_report(owner, repo)` — full orchestration: fetches activity, contributors, news,
+  summarizes, classifies, recommends vendors and angle, writes `reports/{owner}__{repo}__{YYYY-MM-DD}.md`
+- Implement `run_full_analysis(owner, repo, since?, org_domain?)` — single top-level MCP tool call
+- **Lead scoring weights:** activity 25%, pain_points 25%, dependencies 20% (stubbed at 0), team_size 15%, growth 15%
+- Dependency score stubbed at 0 pending Phase 4 implementation
+
+### Phase 4 — Dependency Signals + Polish
+
+- Implement dependency scoring (the stubbed 20% weight from Phase 3):
+  - Fetch `requirements.txt` / `pyproject.toml` / `package.json` via GitHub API
+  - Detect missing SaaS categories (no logging lib, no observability, no auth lib for a >1k star repo)
+  - Flag major version lag on security-sensitive packages
+  - Detect presence of a direct competitor in deps
+- Test `run_full_analysis` on 3–5 real repos representing different signal types
+- Refine `classify_signal` categories and vendor recommendations based on real output
+- Update README with example report output
 
 ## Environment Variables Required
 ```
