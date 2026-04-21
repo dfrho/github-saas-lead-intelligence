@@ -128,16 +128,52 @@ python src/cli.py remove facebook react
 - Repos are stored in `data/registry.json`
 - Registry persists across CLI calls
 
-### 6. Manual Testing (Optional)
+### 6. Test Each Phase
 
-To test the server manually without Claude Code:
+Once the MCP server is registered and Claude Code is reloaded, open a Claude Code chat and run these commands in order.
+
+#### Test Phase 1 — Activity Collection
+
+```python
+watch_repo("facebook", "react", "React.js")
+list_watched_repos()
+fetch_repo_activity("facebook", "react")
+```
+
+Expected: repo appears in registry, activity returns commits/PRs/issues JSON, a second call with no new commits returns "No new activity."
+
+#### Test Phase 2 — Enrichment
+
+```python
+analyze_repo("facebook", "react")
+fetch_contributor_profiles("facebook", "react", max_contributors=5)
+fetch_company_news("facebook", org_domain="meta.com")
+```
+
+Expected: `analyze_repo` returns a 2–3 sentence synopsis plus ranked domain signals; `fetch_contributor_profiles` returns names, companies, and orgs; `fetch_company_news` returns funding/launch/hiring items.
+
+#### Test Phase 3 — Full Report
+
+```python
+run_full_analysis("facebook", "react")
+```
+
+Expected: scores the lead, writes `reports/facebook__react__YYYY-MM-DD.md`, and returns a console summary with lead score, top signals, and outreach angle. Check the file was written:
+
+```bash
+ls reports/
+```
+
+### 7. Manual Server Test (Optional)
+
+To verify the server starts without errors before registering it:
 
 ```bash
 source venv/bin/activate
 python src/main.py
 ```
 
-The server listens on stdin/stdout for MCP protocol messages.
+The server listens on stdin/stdout for MCP protocol messages. `Ctrl+C` to stop.
 
 ## MCP Tools
 
@@ -262,6 +298,62 @@ Parameters:
 
 - `org_domain` — explicit company domain (e.g. `"stripe.com"`) for more targeted search; defaults to searching by org name
 
+---
+
+### Phase 3 — Report Assembly
+
+#### `recommend_saas_vendors(domains)`
+
+Map classified domain signals to curated SaaS vendor recommendations. Only returns vendors for `high` and `medium` confidence signals. Pass the `signals` list from `classify_signal` or `analyze_repo` directly.
+
+```python
+recommend_saas_vendors([
+  {"domain": "observability_monitoring", "confidence": "high", "reasoning": "Prometheus added."},
+  {"domain": "messaging_event_streaming", "confidence": "medium", "reasoning": "Kafka work."}
+])
+# Returns: [
+#   { "domain": "observability_monitoring", "confidence": "high",
+#     "vendors": [{"name": "Datadog", "url": "...", "pitch": "..."}, ...] },
+#   ...
+# ]
+```
+
+#### `generate_lead_report(owner, repo, since?, org_domain?)`
+
+Full orchestration: fetches activity, summarizes, classifies, fetches contributor profiles and company news in parallel, recommends vendors and outreach angle, scores the lead, and writes a report to `reports/`.
+
+```python
+generate_lead_report("stripe", "stripe-python", org_domain="stripe.com")
+# Writes: reports/stripe__stripe-python__YYYY-MM-DD.md
+# Returns: full report JSON including lead score, signals, vendors, and outreach angle
+```
+
+#### `run_full_analysis(owner, repo, since?, org_domain?)`
+
+Single top-level call that runs `generate_lead_report` and returns a console-friendly summary. The recommended starting point for evaluating any repo.
+
+```python
+run_full_analysis("vercel", "next.js", org_domain="vercel.com")
+# Returns:
+# Analysis complete for vercel/next.js
+#
+# Lead Score:  74/100 — Warm lead
+# Top Signals:
+#   [HIGH] cicd_devops
+#   [HIGH] infrastructure_iac
+#   [MEDIUM] observability_monitoring
+#
+# Outreach Angle:
+# Vercel's Next.js team has been...
+#
+# Report: reports/vercel__next.js__YYYY-MM-DD.md
+```
+
+Parameters:
+
+- `since` — ISO 8601 date string; defaults to 30 days ago
+- `org_domain` — company domain for more targeted news search (e.g. `"vercel.com"`)
+
 ## Registry Schema
 
 Each watched repo is stored in `data/registry.json` (auto-managed via CLI or MCP tools).
@@ -279,7 +371,7 @@ Each watched repo is stored in `data/registry.json` (auto-managed via CLI or MCP
 ## Environment Variables
 
 - **`GITHUB_TOKEN`** (required) — GitHub personal access token with `repo` scope
-- **`ANTHROPIC_API_KEY`** (optional, Phase 2+) — For summarization and classification
+- **`ANTHROPIC_API_KEY`** (required for Phase 2+) — For summarization, classification, news search, and outreach angle
 
 ## Implementation Details
 
@@ -291,10 +383,9 @@ See **[IMPLEMENTATION.md](IMPLEMENTATION.md)** for:
 - MCP server tool registration
 - Data model definitions
 
-## Next Phases
+## Next Phase
 
-- **Phase 3** — Report assembly (`recommend_saas_vendors`, `generate_lead_report`)
-- **Phase 4** — Testing and polish on real repos
+- **Phase 4** — Dependency signal scoring (fetch and analyze `package.json`/`pyproject.toml`, detect missing SaaS categories, flag outdated security-sensitive packages)
 
 See [CLAUDE.md](CLAUDE.md) for the full phased build plan.
 

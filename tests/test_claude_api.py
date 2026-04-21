@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from services.claude_api import summarize_activity, classify_signal, fetch_company_news
+from services.claude_api import summarize_activity, classify_signal, fetch_company_news, recommend_outreach_angle
 
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -189,9 +189,7 @@ class TestFetchCompanyNews:
         client = _mock_client(_text_block("Some unexpected prose that isn't JSON."))
         with patch("services.claude_api._get_client", return_value=client):
             result = fetch_company_news("acme")
-        assert len(result) == 1
-        assert result[0]["type"] == "other"
-        assert "Some unexpected prose" in result[0]["snippet"]
+        assert result == []
 
     def test_strips_json_code_fence(self):
         fenced = f"```json\n{json.dumps(self._payload)}\n```"
@@ -221,3 +219,58 @@ class TestFetchCompanyNews:
         call_kwargs = client.messages.create.call_args[1]
         tool_types = [t["type"] for t in call_kwargs["tools"]]
         assert "web_search_20250305" in tool_types
+
+
+# ── recommend_outreach_angle ───────────────────────────────────────────────
+
+class TestRecommendOutreachAngle:
+    _signals = [{"domain": "observability_monitoring", "confidence": "high", "reasoning": "Prometheus added."}]
+    _news = [{"type": "funding", "title": "Acme raises $50M", "date": "2026-03-01"}]
+
+    def test_returns_text(self):
+        client = _mock_client(_text_block("Your team's recent Prometheus work..."))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = recommend_outreach_angle("They added Prometheus.", self._signals, self._news)
+        assert result == "Your team's recent Prometheus work..."
+
+    def test_strips_whitespace(self):
+        client = _mock_client(_text_block("  angle text  "))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = recommend_outreach_angle("synopsis", self._signals, self._news)
+        assert result == "angle text"
+
+    def test_synopsis_in_prompt(self):
+        client = _mock_client(_text_block("angle"))
+        with patch("services.claude_api._get_client", return_value=client):
+            recommend_outreach_angle("Migrating to Kafka.", self._signals, self._news)
+        prompt = client.messages.create.call_args[1]["messages"][0]["content"]
+        assert "Migrating to Kafka." in prompt
+
+    def test_domain_signal_in_prompt(self):
+        client = _mock_client(_text_block("angle"))
+        with patch("services.claude_api._get_client", return_value=client):
+            recommend_outreach_angle("synopsis", self._signals, self._news)
+        prompt = client.messages.create.call_args[1]["messages"][0]["content"]
+        assert "observability_monitoring" in prompt
+
+    def test_news_headline_in_prompt(self):
+        client = _mock_client(_text_block("angle"))
+        with patch("services.claude_api._get_client", return_value=client):
+            recommend_outreach_angle("synopsis", self._signals, self._news)
+        prompt = client.messages.create.call_args[1]["messages"][0]["content"]
+        assert "Acme raises $50M" in prompt
+
+    def test_handles_empty_signals_and_news(self):
+        client = _mock_client(_text_block("angle"))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = recommend_outreach_angle("synopsis", [], [])
+        assert result == "angle"
+
+    def test_caps_signals_at_5_in_prompt(self):
+        client = _mock_client(_text_block("angle"))
+        signals = [{"domain": f"domain_{i}", "confidence": "high", "reasoning": f"reason {i}"} for i in range(10)]
+        with patch("services.claude_api._get_client", return_value=client):
+            recommend_outreach_angle("synopsis", signals, [])
+        prompt = client.messages.create.call_args[1]["messages"][0]["content"]
+        assert "domain_4" in prompt
+        assert "domain_5" not in prompt

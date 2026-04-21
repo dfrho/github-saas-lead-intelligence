@@ -189,3 +189,52 @@ def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
         return json.loads(final_text.strip())
     except json.JSONDecodeError:
         return []
+
+
+def recommend_outreach_angle(
+    synopsis: str,
+    signals: list[dict],
+    news: list[dict],
+) -> str:
+    """
+    Use Claude to write a personalized 1-paragraph outreach angle for a sales rep.
+    Combines the activity synopsis, domain signals, and company news into a
+    specific, non-generic pitch hook.
+    """
+    client = _get_client()
+
+    top_signals = [
+        f"  - {s['domain']} ({s['confidence']} confidence): {s.get('reasoning', '')}"
+        for s in signals[:5]
+    ]
+    top_news = [
+        f"  - [{n.get('type', 'other').upper()}] {n.get('title', '')} ({n.get('date', '')})"
+        for n in news[:5]
+    ]
+
+    signals_text = "\n".join(top_signals) if top_signals else "  - No domain signals detected"
+    news_text = "\n".join(top_news) if top_news else "  - No recent news found"
+
+    response = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=400,
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "You are a senior enterprise sales strategist. Write a 1-paragraph outreach angle "
+                    "for a sales rep to use when cold-contacting this company. It should be specific, "
+                    "timely, and reference concrete signals — not generic.\n\n"
+                    f"What the team is building:\n{synopsis}\n\n"
+                    f"Infrastructure signals (SaaS categories they are likely evaluating):\n{signals_text}\n\n"
+                    f"Recent company news:\n{news_text}\n\n"
+                    "Write a single paragraph (3-5 sentences) that a sales rep could use as an email opener. "
+                    "Be direct, reference the specific technical work and/or news, and connect it to a "
+                    "concrete pain or inflection point. Do not start with 'I' or use filler phrases like "
+                    "'I noticed' or 'I came across'."
+                ),
+            }
+        ],
+    )
+
+    return response.content[0].text.strip()
