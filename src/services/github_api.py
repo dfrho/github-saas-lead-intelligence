@@ -260,3 +260,36 @@ def fetch_contributor_profiles(
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         return list(executor.map(_fetch_profile, contributors))
+
+
+# Dependency files to look for, in priority order per ecosystem
+_DEP_FILES = [
+    "package.json",
+    "requirements.txt",
+    "pyproject.toml",
+    "Pipfile",
+    "go.mod",
+    "Gemfile",
+    "pom.xml",
+    "build.gradle",
+]
+
+
+def fetch_dependency_files(owner: str, repo: str) -> dict[str, str]:
+    """
+    Fetch the contents of dependency manifest files from a repository.
+    Returns a dict of {filename: raw_content} for whichever files exist.
+    Silently skips files that are not present.
+    """
+    github = _get_github_client()
+    repo_obj = github.get_repo(f"{owner}/{repo}")
+
+    results: dict[str, str] = {}
+    for filename in _DEP_FILES:
+        try:
+            file_content = repo_obj.get_contents(filename)
+            results[filename] = file_content.decoded_content.decode("utf-8", errors="replace")
+        except Exception:
+            pass  # file doesn't exist or can't be read
+
+    return results

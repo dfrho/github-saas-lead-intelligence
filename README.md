@@ -164,6 +164,34 @@ Expected: scores the lead, writes `reports/facebook__react__YYYY-MM-DD.md`, and 
 ls reports/
 ```
 
+#### Test Phase 4A — Dependency Signals
+
+Test the dependency fetcher standalone (returns raw file contents):
+
+```python
+fetch_dependency_files("facebook", "react")
+```
+
+Expected: a dict of `{filename: content}` for whichever manifest files exist in the repo (`package.json`, `requirements.txt`, `pyproject.toml`, etc.). Returns `{}` if none are found.
+
+To see dependency scoring in action, run the full report on a repo with a known dependency file:
+
+```python
+run_full_analysis("openai", "openai-python")
+```
+
+Expected: the report's "Dependency Signals" section lists any detected flags (missing observability, version lag on security packages, competitor presence). The `score_breakdown.dependencies` field in the JSON will now be non-zero if signals were detected. Check the written report:
+
+```bash
+cat reports/openai__openai-python__YYYY-MM-DD.md
+```
+
+To test all three flag types explicitly, ask Claude to call `analyze_repo` on repos you know have specific characteristics:
+
+- **Missing observability:** a young repo with no APM library — look for `[HIGH] No observability/APM library detected`
+- **Version lag:** a repo pinning old versions of `requests`, `express`, or `django`
+- **Competitor presence:** a repo that already uses `dd-trace` or `newrelic` — signals they are evaluating that space
+
 ### 7. Manual Server Test (Optional)
 
 To verify the server starts without errors before registering it:

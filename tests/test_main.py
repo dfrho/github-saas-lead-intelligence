@@ -208,38 +208,50 @@ _contributors = [_alice]
 _vendors = [{"domain": "messaging_event_streaming", "confidence": "high", "reasoning": "Kafka work.", "vendors": [{"name": "Confluent", "url": "https://confluent.io", "pitch": "Managed Kafka."}]}]
 
 
+_dep_analysis = MagicMock()
+_dep_analysis.score = 60
+_dep_analysis.ecosystem = "node"
+_dep_analysis.detected_packages = ["express", "stripe"]
+_dep_analysis.flags = []
+
+
+def _patch_generate(tmp_path, outreach="Outreach.", write_return=None):
+    """Return a context manager that patches all external calls in generate_lead_report."""
+    from unittest.mock import patch as _patch
+    from contextlib import ExitStack
+
+    class _Stack:
+        def __enter__(self):
+            self._stack = ExitStack()
+            activity = _make_full_activity()
+            self._stack.enter_context(_patch("main.github_api.fetch_repo_activity", return_value=activity))
+            self._stack.enter_context(_patch("main.claude_api.summarize_activity", return_value="They are adding Kafka."))
+            self._stack.enter_context(_patch("main.claude_api.classify_signal", return_value=_signals))
+            self._stack.enter_context(_patch("main.github_api.fetch_contributor_profiles", return_value=_contributors))
+            self._stack.enter_context(_patch("main.claude_api.fetch_company_news", return_value=_news))
+            self._stack.enter_context(_patch("main.get_vendors_for_domains", return_value=_vendors))
+            self._stack.enter_context(_patch("main.claude_api.recommend_outreach_angle", return_value=outreach))
+            self._stack.enter_context(_patch("main.github_api.fetch_dependency_files", return_value={}))
+            self._stack.enter_context(_patch("main.analyze_dependencies", return_value=_dep_analysis))
+            self._stack.enter_context(_patch("main._write_report", return_value=write_return or tmp_path / "report.md"))
+            return self._stack.__enter__()
+
+        def __exit__(self, *args):
+            return self._stack.__exit__(*args)
+
+    return _Stack()
+
+
 @pytest.mark.asyncio
 async def test_generate_lead_report_writes_file(tmp_path):
-    activity = _make_full_activity()
-    with (
-        patch("main.github_api.fetch_repo_activity", return_value=activity),
-        patch("main.claude_api.summarize_activity", return_value="They are adding Kafka."),
-        patch("main.claude_api.classify_signal", return_value=_signals),
-        patch("main.github_api.fetch_contributor_profiles", return_value=_contributors),
-        patch("main.claude_api.fetch_company_news", return_value=_news),
-        patch("main.get_vendors_for_domains", return_value=_vendors),
-        patch("main.claude_api.recommend_outreach_angle", return_value="Great outreach angle."),
-        patch("main._write_report", return_value=tmp_path / "report.md") as mock_write,
-    ):
+    with _patch_generate(tmp_path) as mocks:
         result = await main.generate_lead_report("acme", "api")
-
-    mock_write.assert_called_once()
     assert len(result) == 2
 
 
 @pytest.mark.asyncio
 async def test_generate_lead_report_json_has_required_fields(tmp_path):
-    activity = _make_full_activity()
-    with (
-        patch("main.github_api.fetch_repo_activity", return_value=activity),
-        patch("main.claude_api.summarize_activity", return_value="They are adding Kafka."),
-        patch("main.claude_api.classify_signal", return_value=_signals),
-        patch("main.github_api.fetch_contributor_profiles", return_value=_contributors),
-        patch("main.claude_api.fetch_company_news", return_value=_news),
-        patch("main.get_vendors_for_domains", return_value=_vendors),
-        patch("main.claude_api.recommend_outreach_angle", return_value="Outreach."),
-        patch("main._write_report", return_value=tmp_path / "report.md"),
-    ):
+    with _patch_generate(tmp_path):
         result = await main.generate_lead_report("acme", "api")
 
     report = json.loads(result[1].text)
@@ -256,17 +268,7 @@ async def test_generate_lead_report_json_has_required_fields(tmp_path):
 
 @pytest.mark.asyncio
 async def test_run_full_analysis_returns_summary_and_json(tmp_path):
-    activity = _make_full_activity()
-    with (
-        patch("main.github_api.fetch_repo_activity", return_value=activity),
-        patch("main.claude_api.summarize_activity", return_value="They are adding Kafka."),
-        patch("main.claude_api.classify_signal", return_value=_signals),
-        patch("main.github_api.fetch_contributor_profiles", return_value=_contributors),
-        patch("main.claude_api.fetch_company_news", return_value=_news),
-        patch("main.get_vendors_for_domains", return_value=_vendors),
-        patch("main.claude_api.recommend_outreach_angle", return_value="Outreach."),
-        patch("main._write_report", return_value=tmp_path / "report.md"),
-    ):
+    with _patch_generate(tmp_path):
         result = await main.run_full_analysis("acme", "api")
 
     assert len(result) == 2

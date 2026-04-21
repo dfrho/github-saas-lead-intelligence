@@ -12,6 +12,7 @@ load_dotenv()
 
 from services import registry, github_api, claude_api
 from services.vendor_map import get_vendors_for_domains
+from services.dependency_analyzer import analyze_dependencies
 
 
 # Initialize MCP server
@@ -362,10 +363,11 @@ def _score_lead(
     contributors: list,
     news: list,
     signals: list,
+    dependency_score: int = 0,
+    dependency_flags: list = None,
 ) -> tuple[int, dict]:
     """
-    Score a lead 0–100 based on activity, pain points, team size, and growth.
-    Dependencies are stubbed at 0 pending Phase 4 implementation.
+    Score a lead 0–100 based on activity, pain points, dependencies, team size, and growth.
     Returns (total_score, score_breakdown).
     """
     # Activity score (25%): commit + PR volume
@@ -398,8 +400,7 @@ def _score_lead(
     growth_raw = min(news_weight_sum / 10, 1.0)
     growth_score = round(growth_raw * 100)
 
-    # Dependencies (20%): stubbed at 0
-    dependency_score = 0
+    dep_flag_messages = [f.message for f in (dependency_flags or [])]
 
     total = round(
         activity_score * 0.25
@@ -412,7 +413,7 @@ def _score_lead(
     breakdown = {
         "activity":     {"score": activity_score,    "weight": 0.25, "signals": [f"{len(commits)} commits, {len(pull_requests)} PRs"]},
         "pain_points":  {"score": pain_score,         "weight": 0.25, "signals": [f"{len(open_issues)} open issues, {labeled_issues} with pain labels"]},
-        "dependencies": {"score": dependency_score,   "weight": 0.20, "signals": ["stubbed at 0 — Phase 4"]},
+        "dependencies": {"score": dependency_score,   "weight": 0.20, "signals": dep_flag_messages or ["no dependency files found"]},
         "team_size":    {"score": team_score,          "weight": 0.15, "signals": [f"{n} contributors"]},
         "growth":       {"score": growth_score,        "weight": 0.15, "signals": [f"{len(news)} news items"]},
     }
@@ -449,6 +450,9 @@ def _write_report(owner: str, repo: str, report: dict) -> Path:
     vendors = report.get("vendors", [])
     contributors = report.get("enrichment", {}).get("top_contributors", [])
     news = report.get("enrichment", {}).get("company_news", [])
+    dep_analysis = report.get("enrichment", {}).get("dependency_analysis", {})
+    dep_flags = dep_analysis.get("flags", [])
+    dep_ecosystem = dep_analysis.get("ecosystem", "unknown")
 
     signal_lines = "\n".join(
         f"- [{s.get('confidence','?').upper()}] **{s.get('domain')}** — {s.get('reasoning','')}"
@@ -471,6 +475,11 @@ def _write_report(owner: str, repo: str, report: dict) -> Path:
         f"- [{n.get('type','other').upper()}] **{n.get('title','')}** ({n.get('date','')}) — {n.get('snippet','')}"
         for n in news
     ) or "- No recent news found"
+
+    dep_lines = "\n".join(
+        f"- [{f.get('severity','?').upper()}] {f.get('message','')}"
+        for f in dep_flags
+    ) or "- No dependency flags detected"
 
     md = f"""# Lead Report: {owner}/{repo}
 
@@ -504,6 +513,10 @@ def _write_report(owner: str, repo: str, report: dict) -> Path:
 ## Company News
 
 {news_lines}
+
+## Dependency Signals (Ecosystem: {dep_ecosystem})
+
+{dep_lines}
 
 ## Recommended Outreach Angle
 
@@ -550,7 +563,7 @@ async def generate_lead_report(
         None, claude_api.classify_signal, synopsis
     )
 
-    # Step 3: parallel — contributors, news, and vendor lookup are independent
+    # Step 3: parallel — contributors, news, vendor lookup, and deps are all independent
     contributors_future = asyncio.get_event_loop().run_in_executor(
         None, github_api.fetch_contributor_profiles, owner, repo, 10
     )
@@ -560,9 +573,12 @@ async def generate_lead_report(
     vendors_future = asyncio.get_event_loop().run_in_executor(
         None, get_vendors_for_domains, signals
     )
+    deps_future = asyncio.get_event_loop().run_in_executor(
+        None, lambda: analyze_dependencies(github_api.fetch_dependency_files(owner, repo))
+    )
 
-    contributors, news, vendors = await asyncio.gather(
-        contributors_future, news_future, vendors_future
+    contributors, news, vendors, dep_analysis = await asyncio.gather(
+        contributors_future, news_future, vendors_future, deps_future
     )
 
     # Step 4: outreach angle (depends on signals + news)
@@ -577,7 +593,9 @@ async def generate_lead_report(
     ]
     contributors_raw = [{"contributions": c.contributions} for c in contributors]
     lead_score, score_breakdown = _score_lead(
-        activity.commits, activity.pull_requests, issues_raw, contributors_raw, news, signals
+        activity.commits, activity.pull_requests, issues_raw, contributors_raw, news, signals,
+        dependency_score=dep_analysis.score,
+        dependency_flags=dep_analysis.flags,
     )
 
     # Step 6: assemble report
@@ -604,6 +622,14 @@ async def generate_lead_report(
                 for c in contributors
             ],
             "company_news": news,
+            "dependency_analysis": {
+                "ecosystem": dep_analysis.ecosystem,
+                "detected_packages": dep_analysis.detected_packages,
+                "flags": [
+                    {"type": f.type, "severity": f.severity, "message": f.message}
+                    for f in dep_analysis.flags
+                ],
+            },
         },
     }
 
