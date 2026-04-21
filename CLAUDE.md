@@ -89,9 +89,12 @@ See `code_instructions/enrichment_ideas.md` for advanced signal detection ideas 
   - Detect missing SaaS categories (no logging lib, no observability, no auth lib for a >1k star repo)
   - Flag major version lag on security-sensitive packages
   - Detect presence of a direct competitor in deps
-- Test `run_full_analysis` on 3–5 real repos representing different signal types
-- Refine `classify_signal` categories and vendor recommendations based on real output
-- Update README with example report output
+- Test on 3–5 real repos representing different signal types:
+  - Run `run_full_analysis` end-to-end and review `.md` + `.json` report output for both formats
+  - Run `analyze_repo` in isolation to verify synopsis + signal quality without full report overhead
+  - Review `recommend_outreach_angle` output for specificity — adjust prompt if results are generic
+  - Refine `classify_signal` domain categories and vendor recommendations based on real output
+- Update README with a real example report (copy from a `reports/` output)
 
 ## Environment Variables Required
 ```
