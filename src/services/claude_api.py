@@ -191,6 +191,92 @@ def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
         return []
 
 
+_DOMAIN_DESCRIPTIONS = {
+    "observability_monitoring": "APM, metrics, tracing, logging infrastructure (Datadog, New Relic, OpenTelemetry)",
+    "auth_identity_sso": "authentication, authorization, SSO, identity management (Auth0, Okta, Clerk)",
+    "messaging_event_streaming": "message queues, event streaming, pub/sub (Kafka, RabbitMQ, Pub/Sub)",
+    "data_pipeline_etl": "ETL, data movement, pipeline orchestration (Fivetran, dbt, Airbyte)",
+    "cicd_devops": "CI/CD, build systems, developer tooling (CircleCI, GitHub Actions, Buildkite)",
+    "database_data_storage": "databases, object storage, caching (Postgres, MySQL, S3, Redis)",
+    "security_compliance": "security scanning, compliance automation, vulnerability management (Snyk, Vanta)",
+    "search": "search infrastructure, full-text or vector search (Algolia, Elasticsearch, Typesense)",
+    "feature_flags": "feature flags, A/B testing, experimentation (LaunchDarkly, Statsig, Unleash)",
+    "api_gateway_service_mesh": "API gateway, rate limiting, service mesh (Kong, Apigee, Traefik)",
+    "testing_qa": "test automation, QA infrastructure, browser testing (Playwright, Sauce Labs, Mabl)",
+    "infrastructure_iac": "infrastructure as code, cloud provisioning (Terraform, Pulumi, Spacelift)",
+    "cdn_edge_networking": "CDN, edge compute, DDoS protection (Cloudflare, Fastly, Bunny.net)",
+    "payments_billing": "payment processing, subscriptions, billing (Stripe, Paddle, Lago)",
+    "notifications_comms": "notifications, transactional email, SMS (Knock, Novu, Resend)",
+    "ml_ai_platform": "ML training, model serving, LLM infrastructure (Weights & Biases, Modal, Replicate)",
+    "analytics_bi": "product analytics, BI, dashboards (Mixpanel, Amplitude, Metabase, PostHog)",
+    "support_ticketing": "customer support, ticketing, helpdesk (Intercom, Zendesk, Plain)",
+    "ecommerce": "ecommerce platform, storefront, cart (Shopify, Medusa, Commerce Layer)",
+    "marketing_communications": "marketing automation, email campaigns (Customer.io, Braze, Iterable)",
+}
+
+
+def detect_company_own_domains(org: str, org_domain: str = None) -> list[str]:
+    """
+    Use Claude with web_search to determine which of our 20 SaaS domain categories
+    the company itself operates in as a vendor or product.
+
+    Returns a list of domain keys from SAAS_DOMAINS. These should be excluded from
+    vendor recommendations to avoid recommending a company's own products back to them.
+    """
+    client = _get_client()
+
+    search_target = org_domain if org_domain else f"{org}.com"
+    domain_lines = "\n".join(
+        f"- {key}: {desc}" for key, desc in _DOMAIN_DESCRIPTIONS.items()
+    )
+
+    response = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=500,
+        tools=[{"type": "web_search_20250305", "name": "web_search"}],
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f'Visit the website for "{search_target}" (GitHub org: {org}) — '
+                    f"check their homepage, solutions page, or product navigation.\n\n"
+                    f"Identify which of the following SaaS categories describe products or services "
+                    f"that this company itself sells or provides:\n\n"
+                    f"{domain_lines}\n\n"
+                    f"Return ONLY a JSON array of matching domain keys (no explanation, no markdown). "
+                    f'Example: ["analytics_bi", "feature_flags"]\n\n'
+                    f"Return [] if the company does not sell products in any of these categories."
+                ),
+            }
+        ],
+    )
+
+    final_text = ""
+    for block in response.content:
+        if block.type == "text":
+            final_text = block.text.strip()
+
+    if not final_text or final_text == "[]":
+        return []
+
+    if "```" in final_text:
+        final_text = final_text.split("```")[1]
+        if final_text.startswith("json"):
+            final_text = final_text[4:]
+
+    start = final_text.find("[")
+    end = final_text.rfind("]")
+    if start != -1 and end != -1:
+        final_text = final_text[start:end + 1]
+
+    try:
+        result = json.loads(final_text.strip())
+        # Filter to only valid domain keys
+        return [d for d in result if d in SAAS_DOMAINS]
+    except json.JSONDecodeError:
+        return []
+
+
 def recommend_outreach_angle(
     synopsis: str,
     signals: list[dict],

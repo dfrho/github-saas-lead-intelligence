@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from services.claude_api import summarize_activity, classify_signal, fetch_company_news, recommend_outreach_angle
+from services.claude_api import summarize_activity, classify_signal, fetch_company_news, recommend_outreach_angle, detect_company_own_domains
 
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -274,3 +274,80 @@ class TestRecommendOutreachAngle:
         prompt = client.messages.create.call_args[1]["messages"][0]["content"]
         assert "domain_4" in prompt
         assert "domain_5" not in prompt
+
+
+# ── detect_company_own_domains ─────────────────────────────────────────────
+
+class TestDetectCompanyOwnDomains:
+    def test_returns_valid_domain_list(self):
+        payload = '["analytics_bi", "feature_flags"]'
+        client = _mock_client(_tool_block(), _text_block(payload))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = detect_company_own_domains("posthog", "posthog.com")
+        assert "analytics_bi" in result
+        assert "feature_flags" in result
+
+    def test_filters_out_invalid_domain_keys(self):
+        # Claude returns a made-up domain — should be stripped
+        payload = '["analytics_bi", "not_a_real_domain"]'
+        client = _mock_client(_text_block(payload))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = detect_company_own_domains("acme")
+        assert "not_a_real_domain" not in result
+        assert "analytics_bi" in result
+
+    def test_returns_empty_list_for_empty_array_response(self):
+        client = _mock_client(_text_block("[]"))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = detect_company_own_domains("acme")
+        assert result == []
+
+    def test_returns_empty_list_on_json_parse_failure(self):
+        client = _mock_client(_text_block("no json here"))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = detect_company_own_domains("acme")
+        assert result == []
+
+    def test_returns_empty_list_when_no_text_block(self):
+        client = _mock_client(_tool_block())
+        with patch("services.claude_api._get_client", return_value=client):
+            result = detect_company_own_domains("acme")
+        assert result == []
+
+    def test_strips_json_code_fence(self):
+        fenced = '```json\n["analytics_bi"]\n```'
+        client = _mock_client(_text_block(fenced))
+        with patch("services.claude_api._get_client", return_value=client):
+            result = detect_company_own_domains("acme")
+        assert result == ["analytics_bi"]
+
+    def test_uses_org_domain_in_prompt_when_provided(self):
+        client = _mock_client(_text_block("[]"))
+        with patch("services.claude_api._get_client", return_value=client):
+            detect_company_own_domains("posthog", "posthog.com")
+        prompt = client.messages.create.call_args[1]["messages"][0]["content"]
+        assert "posthog.com" in prompt
+
+    def test_falls_back_to_org_com_when_no_domain(self):
+        client = _mock_client(_text_block("[]"))
+        with patch("services.claude_api._get_client", return_value=client):
+            detect_company_own_domains("myorg")
+        prompt = client.messages.create.call_args[1]["messages"][0]["content"]
+        assert "myorg.com" in prompt
+
+    def test_web_search_tool_is_passed_to_api(self):
+        client = _mock_client(_text_block("[]"))
+        with patch("services.claude_api._get_client", return_value=client):
+            detect_company_own_domains("acme")
+        call_kwargs = client.messages.create.call_args[1]
+        tool_types = [t["type"] for t in call_kwargs["tools"]]
+        assert "web_search_20250305" in tool_types
+
+    def test_all_20_domains_described_in_prompt(self):
+        from services.claude_api import SAAS_DOMAINS
+        client = _mock_client(_text_block("[]"))
+        with patch("services.claude_api._get_client", return_value=client):
+            detect_company_own_domains("acme")
+        prompt = client.messages.create.call_args[1]["messages"][0]["content"]
+        for domain in SAAS_DOMAINS:
+            assert domain in prompt

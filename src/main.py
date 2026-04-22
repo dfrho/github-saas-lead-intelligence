@@ -564,23 +564,31 @@ async def generate_lead_report(
         None, claude_api.classify_signal, synopsis
     )
 
-    # Step 3: parallel — contributors, news, vendor lookup, and deps are all independent
+    # Step 3: parallel — contributors, news, own-domain detection, and deps are all independent
     contributors_future = asyncio.get_event_loop().run_in_executor(
         None, github_api.fetch_contributor_profiles, owner, repo, 10
     )
     news_future = asyncio.get_event_loop().run_in_executor(
         None, claude_api.fetch_company_news, owner, org_domain
     )
-    vendors_future = asyncio.get_event_loop().run_in_executor(
-        None, get_vendors_for_domains, signals, owner, exclude_domains
+    own_domains_future = asyncio.get_event_loop().run_in_executor(
+        None, claude_api.detect_company_own_domains, owner, org_domain
     )
     deps_future = asyncio.get_event_loop().run_in_executor(
         None, lambda: analyze_dependencies(github_api.fetch_dependency_files(owner, repo))
     )
 
-    contributors, news, vendors, dep_analysis = await asyncio.gather(
-        contributors_future, news_future, vendors_future, deps_future
+    contributors, news, detected_own_domains, dep_analysis = await asyncio.gather(
+        contributors_future, news_future, own_domains_future, deps_future
     )
+
+    # Merge auto-detected own domains with any manually passed exclusions
+    all_exclude_domains = list(set(detected_own_domains) | set(exclude_domains or []))
+
+    vendors_future = asyncio.get_event_loop().run_in_executor(
+        None, get_vendors_for_domains, signals, owner, all_exclude_domains
+    )
+    vendors = await vendors_future
 
     # Step 4: outreach angle (depends on signals + news)
     outreach_angle = await asyncio.get_event_loop().run_in_executor(

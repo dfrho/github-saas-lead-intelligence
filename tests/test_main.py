@@ -229,6 +229,7 @@ def _patch_generate(tmp_path, outreach="Outreach.", write_return=None):
             self._stack.enter_context(_patch("main.claude_api.classify_signal", return_value=_signals))
             self._stack.enter_context(_patch("main.github_api.fetch_contributor_profiles", return_value=_contributors))
             self._stack.enter_context(_patch("main.claude_api.fetch_company_news", return_value=_news))
+            self._stack.enter_context(_patch("main.claude_api.detect_company_own_domains", return_value=[]))
             self._stack.enter_context(_patch("main.get_vendors_for_domains", return_value=_vendors))
             self._stack.enter_context(_patch("main.claude_api.recommend_outreach_angle", return_value=outreach))
             self._stack.enter_context(_patch("main.github_api.fetch_dependency_files", return_value={}))
