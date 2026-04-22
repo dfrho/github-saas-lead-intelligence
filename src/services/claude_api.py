@@ -1,5 +1,7 @@
 import os
 import json
+import re
+from datetime import datetime, timezone, timedelta
 from anthropic import Anthropic
 
 _client = None
@@ -130,6 +132,91 @@ def classify_signal(summary: str) -> list[dict]:
     return json.loads(text.strip())
 
 
+_TRUSTED_NEWS_DOMAINS = {
+    "techcrunch.com", "bloomberg.com", "reuters.com", "wsj.com", "ft.com",
+    "forbes.com", "businessinsider.com", "venturebeat.com", "theinformation.com",
+    "sifted.eu", "axios.com", "cnbc.com", "wired.com", "arstechnica.com",
+    "theregister.com", "infoq.com", "devops.com", "thenewstack.io",
+    "crunchbase.com", "prnewswire.com", "businesswire.com", "globenewswire.com",
+}
+
+
+def _extract_date(date_str: str):
+    """Parse a YYYY-MM-DD or approximate date string. Returns a date or None."""
+    if not date_str:
+        return None
+    match = re.search(r"(\d{4}-\d{2}-\d{2})", date_str)
+    if match:
+        try:
+            return datetime.strptime(match.group(1), "%Y-%m-%d").date()
+        except ValueError:
+            return None
+    match = re.search(r"(\d{4})", date_str)
+    if match:
+        try:
+            return datetime(int(match.group(1)), 6, 15).date()  # mid-year estimate
+        except ValueError:
+            return None
+    return None
+
+
+def _titles_overlap(a: str, b: str) -> bool:
+    """Return True if two titles share enough significant words to be the same event."""
+    stop = {"the", "a", "an", "and", "or", "of", "in", "at", "to", "for", "is", "on"}
+    words_a = {w.lower() for w in re.findall(r"\w+", a) if w.lower() not in stop and len(w) > 3}
+    words_b = {w.lower() for w in re.findall(r"\w+", b) if w.lower() not in stop and len(w) > 3}
+    if not words_a or not words_b:
+        return False
+    overlap = words_a & words_b
+    return len(overlap) >= 3
+
+
+def _post_process_news(items: list[dict]) -> list[dict]:
+    """
+    Apply hallucination controls to raw news items:
+    1. Drop items with dates more than 18 months ago or in the future.
+    2. Prefer items from trusted news domains (demote others, don't drop).
+    3. Deduplicate items that reference the same event (same keywords + close dates).
+    """
+    today = datetime.now(timezone.utc).date()
+    cutoff_past = today - timedelta(days=548)  # ~18 months
+    cutoff_future = today + timedelta(days=30)  # allow slight future dates for scheduled events
+
+    # Step 1: date filter
+    dated = []
+    for item in items:
+        d = _extract_date(item.get("date", ""))
+        if d is None or (cutoff_past <= d <= cutoff_future):
+            dated.append((item, d))
+
+    # Step 2: sort — trusted sources first, then by date descending
+    def _sort_key(pair):
+        item, d = pair
+        url = item.get("url", "")
+        trusted = any(domain in url for domain in _TRUSTED_NEWS_DOMAINS)
+        date_val = d.toordinal() if d else 0
+        return (not trusted, -date_val)
+
+    dated.sort(key=_sort_key)
+
+    # Step 3: deduplicate — skip items that are duplicates of an already-kept item
+    kept = []
+    for item, d in dated:
+        is_dupe = False
+        for kept_item, kept_d in kept:
+            same_event = _titles_overlap(item.get("title", ""), kept_item.get("title", ""))
+            close_dates = (
+                d is not None and kept_d is not None and abs((d - kept_d).days) <= 30
+            )
+            if same_event and close_dates:
+                is_dupe = True
+                break
+        if not is_dupe:
+            kept.append((item, d))
+
+    return [item for item, _ in kept]
+
+
 def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
     """
     Use Claude with web_search to find recent news/press about a GitHub org.
@@ -148,14 +235,18 @@ def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
                 "role": "user",
                 "content": (
                     f'Search for recent news about the company "{search_target}" (GitHub org: {org}).\n\n'
-                    "Find (up to 8 results total):\n"
-                    "1. Funding announcements or investor news (last 12 months)\n"
+                    "Find (up to 8 results total) from the last 18 months only:\n"
+                    "1. Funding announcements or investor news\n"
                     "2. Product launch announcements or press releases\n"
                     "3. Technical blog posts indicating infrastructure investment\n"
                     "4. Hiring surges or executive changes\n"
                     "5. Partnerships or acquisitions\n\n"
+                    "Prefer results from reputable sources: TechCrunch, Bloomberg, Reuters, Forbes, "
+                    "VentureBeat, Axios, PR Newswire, BusinessWire, or the company's own official blog. "
+                    "Only include items you are confident are about this specific company. "
+                    "Do not include speculative or unverified items.\n\n"
                     "After searching, return ONLY a JSON array (no markdown, max 8 items) of results:\n"
-                    '[{"title": "...", "url": "...", "date": "YYYY-MM-DD or approximate", '
+                    '[{"title": "...", "url": "...", "date": "YYYY-MM-DD", '
                     '"type": "funding|launch|technical|hiring|partnership|other", '
                     '"snippet": "1-2 sentence summary"}]\n\n'
                     "Return an empty array [] if nothing relevant is found."
@@ -186,7 +277,8 @@ def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
         final_text = final_text[start:end + 1]
 
     try:
-        return json.loads(final_text.strip())
+        items = json.loads(final_text.strip())
+        return _post_process_news(items)
     except json.JSONDecodeError:
         return []
 

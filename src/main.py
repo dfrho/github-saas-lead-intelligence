@@ -564,6 +564,14 @@ async def generate_lead_report(
         None, claude_api.classify_signal, synopsis
     )
 
+    # Confidence threshold check — flag low-signal reports
+    high_confidence_count = sum(1 for s in signals if s.get("confidence") == "high")
+    low_signal_warning = (
+        "Low signal confidence: fewer than 2 high-confidence domain signals detected. "
+        "This repo may have limited activity, mixed signals, or insufficient data for a reliable lead score."
+        if high_confidence_count < 2 else None
+    )
+
     # Step 3: parallel — contributors, news, own-domain detection, and deps are all independent
     contributors_future = asyncio.get_event_loop().run_in_executor(
         None, github_api.fetch_contributor_profiles, owner, repo, 10
@@ -619,6 +627,7 @@ async def generate_lead_report(
         "signals": signals,
         "vendors": vendors,
         "recommended_angle": outreach_angle,
+        "low_signal_warning": low_signal_warning,
         "enrichment": {
             "top_contributors": [
                 {

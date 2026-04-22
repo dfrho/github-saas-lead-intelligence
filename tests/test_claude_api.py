@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from services.claude_api import summarize_activity, classify_signal, fetch_company_news, recommend_outreach_angle, detect_company_own_domains
+from services.claude_api import summarize_activity, classify_signal, fetch_company_news, recommend_outreach_angle, detect_company_own_domains, _post_process_news, _titles_overlap, _extract_date
 
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -154,6 +154,85 @@ class TestClassifySignal:
     def test_domain_list_has_20_entries(self):
         from services.claude_api import SAAS_DOMAINS
         assert len(SAAS_DOMAINS) == 20
+
+
+# ── hallucination controls ─────────────────────────────────────────────────
+
+class TestExtractDate:
+    def test_parses_iso_date(self):
+        assert _extract_date("2026-03-01") is not None
+
+    def test_parses_date_from_prose(self):
+        assert _extract_date("approximately 2025-06-15") is not None
+
+    def test_returns_none_for_empty(self):
+        assert _extract_date("") is None
+
+    def test_returns_none_for_unparseable(self):
+        assert _extract_date("recently") is None
+
+    def test_falls_back_to_year_only(self):
+        result = _extract_date("2025")
+        assert result is not None
+        assert result.year == 2025
+
+
+class TestTitlesOverlap:
+    def test_identical_titles_overlap(self):
+        assert _titles_overlap("OpenAI raises record funding round", "OpenAI raises record funding round")
+
+    def test_similar_titles_overlap(self):
+        assert _titles_overlap(
+            "OpenAI Closes Record $122B Funding Round",
+            "OpenAI raises $122B in historic funding round"
+        )
+
+    def test_unrelated_titles_do_not_overlap(self):
+        assert not _titles_overlap("OpenAI raises funding", "Stripe launches new product")
+
+    def test_short_titles_do_not_false_positive(self):
+        assert not _titles_overlap("Raises funding", "New launch")
+
+
+class TestPostProcessNews:
+    def _item(self, title, date, url="https://techcrunch.com/article"):
+        return {"title": title, "url": url, "date": date, "type": "funding", "snippet": "..."}
+
+    def test_drops_items_older_than_18_months(self):
+        old = self._item("Old news", "2020-01-01")
+        recent = self._item("Recent news", "2026-01-01")
+        result = _post_process_news([old, recent])
+        titles = [r["title"] for r in result]
+        assert "Old news" not in titles
+        assert "Recent news" in titles
+
+    def test_drops_future_items_beyond_30_days(self):
+        future = self._item("Future event", "2030-01-01")
+        result = _post_process_news([future])
+        assert result == []
+
+    def test_keeps_items_with_no_parseable_date(self):
+        item = self._item("Undated news", "")
+        result = _post_process_news([item])
+        assert len(result) == 1
+
+    def test_deduplicates_same_event(self):
+        a = self._item("OpenAI Closes Record $122B Funding Round at $852B Valuation", "2026-03-31")
+        b = self._item("OpenAI raises $122B in historic funding round valuation", "2026-04-01")
+        result = _post_process_news([a, b])
+        assert len(result) == 1
+
+    def test_keeps_distinct_events(self):
+        a = self._item("OpenAI raises $122B funding round", "2026-03-01")
+        b = self._item("Stripe launches new payment product", "2026-03-15")
+        result = _post_process_news([a, b])
+        assert len(result) == 2
+
+    def test_trusted_sources_sorted_first(self):
+        trusted = self._item("TechCrunch coverage", "2026-01-01", url="https://techcrunch.com/article")
+        unknown = self._item("Random blog", "2026-02-01", url="https://randomblog.io/post")
+        result = _post_process_news([unknown, trusted])
+        assert result[0]["title"] == "TechCrunch coverage"
 
 
 # ── fetch_company_news ─────────────────────────────────────────────────────

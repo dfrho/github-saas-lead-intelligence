@@ -414,6 +414,22 @@ Each watched repo is stored in `data/registry.json` (auto-managed via CLI or MCP
 
 **Don't edit manually** — use `python src/cli.py add` or `watch_repo()` tool instead.
 
+## Hallucination Controls
+
+Claude-generated content is validated and filtered at multiple points in the pipeline:
+
+**News date validation** — Items from `fetch_company_news` are dropped if their date is more than 18 months in the past or more than 30 days in the future. This prevents stale or speculative items from influencing the outreach angle or growth score.
+
+**News deduplication** — Items that share 3+ significant title keywords and dates within 30 days of each other are collapsed into a single entry, keeping the one from the more trusted source. This prevents the same funding round or launch from appearing twice under slightly different headlines.
+
+**Source ranking** — News items from reputable outlets (TechCrunch, Bloomberg, Reuters, Forbes, VentureBeat, PR Newswire, etc.) are sorted above unverified sources. Claude is also instructed in the prompt to prefer these sources and exclude unverified items.
+
+**Domain classification constraints** — `classify_signal` is given a fixed list of 20 domain keys and instructed to return only those keys. Claude cannot invent new categories.
+
+**Confidence threshold warning** — If fewer than 2 high-confidence domain signals are returned by `classify_signal`, a `low_signal_warning` field is added to the report JSON flagging that the lead score may be unreliable.
+
+**Dependency scoring is fully deterministic** — All package detection, version lag, and competitor presence checks use static lookup tables with no Claude involvement, eliminating hallucination risk in that component entirely.
+
 ## Environment Variables
 
 - **`GITHUB_TOKEN`** (required) — GitHub personal access token with `repo` scope
