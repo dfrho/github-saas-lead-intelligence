@@ -85,6 +85,14 @@ _PACKAGE_CATEGORIES = {
     "nodemailer": "email", "sendgrid": "email", "@sendgrid/mail": "email",
     "resend": "email", "postmark": "email",
     "twilio": "notifications", "vonage": "notifications",
+
+    # Ecommerce
+    "@shopify/shopify-api": "ecommerce", "shopify-api-node": "ecommerce",
+    "shopify": "ecommerce", "shopify-python-api": "ecommerce",
+    "@medusajs/medusa": "ecommerce", "medusa-js": "ecommerce",
+    "@commercelayer/sdk": "ecommerce", "@commercelayer/js-sdk": "ecommerce",
+    "woocommerce": "ecommerce", "woocommerce-rest-api": "ecommerce",
+    "bigcommerce": "ecommerce",
 }
 
 # Categories we consider "expected" for repos above a certain maturity threshold.

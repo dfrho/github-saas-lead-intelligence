@@ -9,6 +9,7 @@ from services.dependency_analyzer import (
     _parse_package_json,
     _parse_requirements_txt,
     _parse_pyproject_toml,
+    _PACKAGE_CATEGORIES,
 )
 
 
@@ -203,6 +204,18 @@ class TestAnalyzeDependencies:
         result = analyze_dependencies({"package.json": content})
         assert "express" in result.detected_packages
         assert "stripe" in result.detected_packages
+
+    def test_detects_shopify_as_ecommerce_category(self):
+        content = '{"dependencies": {"@shopify/shopify-api": "^9.0.0"}}'
+        result = analyze_dependencies({"package.json": content})
+        covered = {_PACKAGE_CATEGORIES.get(p) for p in result.detected_packages}
+        assert "ecommerce" in covered
+
+    def test_detects_medusa_as_ecommerce_category(self):
+        content = '{"dependencies": {"@medusajs/medusa": "^1.0.0"}}'
+        result = analyze_dependencies({"package.json": content})
+        covered = {_PACKAGE_CATEGORIES.get(p) for p in result.detected_packages}
+        assert "ecommerce" in covered
 
 
 # ── fetch_dependency_files (github_api integration) ───────────────────────
