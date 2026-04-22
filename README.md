@@ -2,6 +2,13 @@
 
 Monitors GitHub repositories for engineering activity and converts code changes into structured sales leads. The core insight: when an engineering team heavily commits to a new infrastructure domain (messaging, auth, observability, etc.), that company will be in-market for SaaS vendors in that space within 60–120 days.
 
+## Clone the Repo
+
+```bash
+git clone https://github.com/dfrho/github-saas-lead-intelligence.git
+cd github-saas-lead-intelligence
+```
+
 ## Structure
 
 ```
