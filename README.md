@@ -12,15 +12,26 @@ Monitors GitHub repositories for engineering activity and converts code changes 
 │   ├── report_format.md       ← Report template (JSON + Markdown)
 │   └── enrichment_ideas.md    ← Phase 2+ signal ideas
 ├── src/
-│   ├── main.py                ← MCP server entry point
+│   ├── main.py                ← MCP server entry point + tool orchestration
 │   ├── cli.py                 ← CLI for managing registry
 │   └── services/
 │       ├── registry.py        ← Registry persistence (data/registry.json)
 │       ├── github_api.py      ← GitHub API wrapper (PyGithub)
-│       └── claude_api.py      ← Anthropic API wrapper (summarize, classify, news)
+│       ├── claude_api.py      ← Anthropic API wrapper (summarize, classify, news,
+│       │                          outreach angle, company domain detection)
+│       ├── dependency_analyzer.py  ← Parses manifest files; scores missing categories,
+│       │                               version lag, and competitor presence
+│       └── vendor_map.py      ← Static domain → curated SaaS vendor lookup
+├── tests/
+│   ├── test_main.py           ← Tool orchestration and scoring tests
+│   ├── test_claude_api.py     ← Claude API wrapper tests
+│   ├── test_github_api.py     ← GitHub API wrapper tests
+│   ├── test_dependency_analyzer.py  ← Dependency scoring and parser tests
+│   └── test_vendor_map.py     ← Vendor map and filter tests
 ├── data/
 │   └── registry.json          ← Watched repos (auto-managed, .gitignored)
-├── reports/                   ← Generated lead reports (Phase 3+)
+├── reports/                   ← Generated lead reports (.gitignored)
+├── fine_tuning/               ← Real-world test run notes and report output
 └── pyproject.toml             ← Dependencies & configuration
 ```
 
