@@ -93,3 +93,30 @@ class TestGetVendorsForDomains:
 
     def test_empty_signals_returns_empty(self):
         assert get_vendors_for_domains([]) == []
+
+    def test_org_filter_removes_self_referential_vendor(self):
+        # Vercel Edge Network URL contains "vercel" — should be filtered when org="vercel"
+        signals = [{"domain": "cdn_edge_networking", "confidence": "high", "reasoning": "CDN work."}]
+        result = get_vendors_for_domains(signals, org="vercel")
+        vendor_names = [v["name"] for v in result[0]["vendors"]]
+        assert "Vercel Edge Network" not in vendor_names
+
+    def test_org_filter_keeps_other_vendors(self):
+        # Other cdn vendors should still be present
+        signals = [{"domain": "cdn_edge_networking", "confidence": "high", "reasoning": "CDN work."}]
+        result = get_vendors_for_domains(signals, org="vercel")
+        vendor_names = [v["name"] for v in result[0]["vendors"]]
+        assert "Cloudflare" in vendor_names
+        assert "Fastly" in vendor_names
+
+    def test_org_filter_is_case_insensitive(self):
+        signals = [{"domain": "cdn_edge_networking", "confidence": "high", "reasoning": "CDN work."}]
+        result_lower = get_vendors_for_domains(signals, org="vercel")
+        result_upper = get_vendors_for_domains(signals, org="Vercel")
+        assert result_lower == result_upper
+
+    def test_org_filter_empty_string_no_filtering(self):
+        signals = [{"domain": "cdn_edge_networking", "confidence": "high", "reasoning": "CDN work."}]
+        all_vendors = get_vendors_for_domains(signals)
+        filtered = get_vendors_for_domains(signals, org="")
+        assert all_vendors == filtered

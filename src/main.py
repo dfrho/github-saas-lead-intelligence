@@ -571,7 +571,7 @@ async def generate_lead_report(
         None, claude_api.fetch_company_news, owner, org_domain
     )
     vendors_future = asyncio.get_event_loop().run_in_executor(
-        None, get_vendors_for_domains, signals
+        None, get_vendors_for_domains, signals, owner
     )
     deps_future = asyncio.get_event_loop().run_in_executor(
         None, lambda: analyze_dependencies(github_api.fetch_dependency_files(owner, repo))
