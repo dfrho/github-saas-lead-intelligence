@@ -120,3 +120,38 @@ class TestGetVendorsForDomains:
         all_vendors = get_vendors_for_domains(signals)
         filtered = get_vendors_for_domains(signals, org="")
         assert all_vendors == filtered
+
+    def test_exclude_domains_skips_entire_domain(self):
+        # PostHog is an analytics product — analytics_bi should be excluded
+        signals = [
+            {"domain": "analytics_bi", "confidence": "high", "reasoning": "Analytics work."},
+            {"domain": "observability_monitoring", "confidence": "high", "reasoning": "Metrics work."},
+        ]
+        result = get_vendors_for_domains(signals, exclude_domains=["analytics_bi"])
+        domains = [r["domain"] for r in result]
+        assert "analytics_bi" not in domains
+        assert "observability_monitoring" in domains
+
+    def test_exclude_domains_multiple(self):
+        signals = [
+            {"domain": "analytics_bi", "confidence": "high", "reasoning": "..."},
+            {"domain": "feature_flags", "confidence": "high", "reasoning": "..."},
+            {"domain": "cicd_devops", "confidence": "high", "reasoning": "..."},
+        ]
+        result = get_vendors_for_domains(signals, exclude_domains=["analytics_bi", "feature_flags"])
+        domains = [r["domain"] for r in result]
+        assert "analytics_bi" not in domains
+        assert "feature_flags" not in domains
+        assert "cicd_devops" in domains
+
+    def test_exclude_domains_none_is_noop(self):
+        signals = [{"domain": "observability_monitoring", "confidence": "high", "reasoning": "..."}]
+        result_no_exclude = get_vendors_for_domains(signals)
+        result_none = get_vendors_for_domains(signals, exclude_domains=None)
+        assert result_no_exclude == result_none
+
+    def test_exclude_domains_empty_list_is_noop(self):
+        signals = [{"domain": "observability_monitoring", "confidence": "high", "reasoning": "..."}]
+        result_no_exclude = get_vendors_for_domains(signals)
+        result_empty = get_vendors_for_domains(signals, exclude_domains=[])
+        assert result_no_exclude == result_empty

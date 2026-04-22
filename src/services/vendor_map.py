@@ -140,7 +140,11 @@ VENDOR_MAP: dict[str, list[dict]] = {
 }
 
 
-def get_vendors_for_domains(signals: list[dict], org: str = "") -> list[dict]:
+def get_vendors_for_domains(
+    signals: list[dict],
+    org: str = "",
+    exclude_domains: list[str] = None,
+) -> list[dict]:
     """
     Look up vendors for a list of classified signals.
     Only returns results for high and medium confidence signals.
@@ -149,16 +153,21 @@ def get_vendors_for_domains(signals: list[dict], org: str = "") -> list[dict]:
         signals: List of {domain, confidence, reasoning} dicts from classify_signal
         org: GitHub org name (e.g. "vercel"). Vendors whose URL contains this string
              are filtered out to avoid recommending a company's own products back to them.
+        exclude_domains: List of domain names to skip entirely (e.g. ["analytics_bi",
+             "feature_flags"] for a company that is itself an analytics/feature-flag product).
 
     Returns:
         List of {domain, confidence, reasoning, vendors} dicts
     """
     org_lower = org.lower() if org else ""
+    excluded = set(exclude_domains or [])
     results = []
     for signal in signals:
         if signal.get("confidence") not in ("high", "medium"):
             continue
         domain = signal.get("domain", "")
+        if domain in excluded:
+            continue
         vendors = VENDOR_MAP.get(domain, [])
         if org_lower:
             vendors = [v for v in vendors if org_lower not in v["url"].lower()]

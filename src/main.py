@@ -535,6 +535,7 @@ async def generate_lead_report(
     repo: str,
     since: str = None,
     org_domain: str = None,
+    exclude_domains: list = None,
 ) -> list[TextContent]:
     """
     Full orchestration: fetches activity, summarizes, classifies, fetches contributor
@@ -571,7 +572,7 @@ async def generate_lead_report(
         None, claude_api.fetch_company_news, owner, org_domain
     )
     vendors_future = asyncio.get_event_loop().run_in_executor(
-        None, get_vendors_for_domains, signals, owner
+        None, get_vendors_for_domains, signals, owner, exclude_domains
     )
     deps_future = asyncio.get_event_loop().run_in_executor(
         None, lambda: analyze_dependencies(github_api.fetch_dependency_files(owner, repo))
@@ -648,13 +649,14 @@ async def run_full_analysis(
     repo: str,
     since: str = None,
     org_domain: str = None,
+    exclude_domains: list = None,
 ) -> list[TextContent]:
     """
     Single top-level call to generate a complete lead report for a repository.
     Runs all enrichment, scoring, and report generation in one command.
     Returns a console-friendly summary and the report file path.
     """
-    results = await generate_lead_report(owner, repo, since, org_domain)
+    results = await generate_lead_report(owner, repo, since, org_domain, exclude_domains)
 
     # results[0] is the file path line, results[1] is full JSON
     report = json.loads(results[1].text)
