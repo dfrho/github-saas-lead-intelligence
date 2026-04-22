@@ -73,11 +73,11 @@ VENDOR_MAP: dict[str, list[dict]] = {
         {"name": "Traefik Labs", "url": "https://traefik.io", "pitch": "Cloud-native API gateway and ingress controller with automatic service discovery"},
     ],
     "testing_qa": [
-        {"name": "Playwright", "url": "https://playwright.dev", "pitch": "Microsoft's end-to-end testing framework with cross-browser support and trace viewer"},
-        {"name": "Sauce Labs", "url": "https://saucelabs.com", "pitch": "Cloud-based test execution across 800+ browser/OS combinations with AI failure analysis"},
-        {"name": "Mabl", "url": "https://mabl.com", "pitch": "Low-code intelligent test automation with auto-healing, visual testing, and CI integration"},
-        {"name": "Checkly", "url": "https://checklyhq.com", "pitch": "Monitoring-as-code for APIs and Playwright tests with alerting and Vercel/Netlify integration"},
-        {"name": "Chromatic", "url": "https://chromatic.com", "pitch": "Visual regression testing for Storybook components with PR review workflows"},
+        {"name": "Playwright", "url": "https://playwright.dev", "pitch": "Microsoft's end-to-end testing framework with cross-browser and API testing support and built-in trace viewer"},
+        {"name": "Checkly", "url": "https://checklyhq.com", "pitch": "Monitoring-as-code for APIs and Playwright tests with alerting and CI/CD integration"},
+        {"name": "k6", "url": "https://k6.io", "pitch": "Developer-centric load and API performance testing with a JavaScript scripting model and Grafana integration"},
+        {"name": "Schemathesis", "url": "https://schemathesis.io", "pitch": "Automated API contract testing from OpenAPI/GraphQL specs — finds edge cases unit tests miss"},
+        {"name": "Postman", "url": "https://postman.com", "pitch": "API platform for building, testing, and documenting APIs with automated collection runs and CI integration"},
     ],
     "infrastructure_iac": [
         {"name": "Pulumi", "url": "https://pulumi.com", "pitch": "Infrastructure as code using real programming languages with state management and policy-as-code"},
@@ -91,6 +91,7 @@ VENDOR_MAP: dict[str, list[dict]] = {
         {"name": "Fastly", "url": "https://fastly.com", "pitch": "Programmable CDN with real-time purging, edge compute, and 99.99% uptime SLA"},
         {"name": "Vercel Edge Network", "url": "https://vercel.com/docs/edge-network", "pitch": "Globally distributed edge runtime co-located with Vercel deployments for zero-latency rendering"},
         {"name": "Bunny.net", "url": "https://bunny.net", "pitch": "Cost-effective CDN and edge storage with 100+ PoPs and smart geographic routing"},
+        {"name": "AWS CloudFront", "url": "https://aws.amazon.com/cloudfront", "pitch": "Globally distributed CDN deeply integrated with AWS services, Lambda@Edge, and WAF for security at scale"},
     ],
     "payments_billing": [
         {"name": "Stripe", "url": "https://stripe.com", "pitch": "Full-stack payments infrastructure with subscriptions, invoicing, tax, and fraud detection"},
