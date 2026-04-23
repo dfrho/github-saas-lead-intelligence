@@ -1,0 +1,97 @@
+<svg width="100%" viewBox="0 0 680 440" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>GitHub SaaS Lead Intelligence — system architecture</title>
+<desc>Five-layer architecture: Claude Code trigger feeds MCP Server and CLI entry points; MCP Server orchestrates five Python services via a bus; services call GitHub API and Anthropic API and write to registry.json and reports/</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<g>
+  <rect x="215" y="22" width="250" height="40" rx="8" stroke-width="0.5" style="fill:rgb(68, 68, 65);stroke:rgb(180, 178, 169);"/>
+  <text x="340" y="42" text-anchor="middle" dominant-baseline="central" style="fill:rgb(211, 209, 199);font-size:14px;font-weight:500;">Claude Code (MCP client)</text>
+</g>
+
+<path d="M340 62 L340 82 L200 82 L200 115" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M340 82 L505 82 L505 115" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+
+<g>
+  <rect x="55" y="115" width="290" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236);"/>
+  <text x="200" y="136" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206, 203, 246);font-size:14px;font-weight:500;">MCP Server</text>
+  <text x="200" y="154" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175, 169, 236);font-size:12px;">main.py · tool orchestration</text>
+</g>
+<g>
+  <rect x="385" y="115" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236);"/>
+  <text x="505" y="136" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206, 203, 246);font-size:14px;font-weight:500;">CLI</text>
+  <text x="505" y="154" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175, 169, 236);font-size:12px;">cli.py · registry mgmt</text>
+</g>
+
+<line x1="200" y1="167" x2="200" y2="194" stroke="rgb(194, 192, 182)" stroke-width="1"/>
+<line x1="104" y1="194" x2="576" y2="194" stroke="rgb(194, 192, 182)" stroke-width="1"/>
+<line x1="104" y1="194" x2="104" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="222" y1="194" x2="222" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="340" y1="194" x2="340" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="458" y1="194" x2="458" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="576" y1="194" x2="576" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+
+<g>
+  <rect x="50" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
+  <text x="104" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">github_api</text>
+  <text x="104" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">GitHub wrapper</text>
+</g>
+<g>
+  <rect x="168" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
+  <text x="222" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">claude_api</text>
+  <text x="222" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">Claude wrapper</text>
+</g>
+<g>
+  <rect x="286" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
+  <text x="340" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">registry</text>
+  <text x="340" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">Persistence</text>
+</g>
+<g>
+  <rect x="404" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
+  <text x="458" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">dep_analyzer</text>
+  <text x="458" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">Dep scoring</text>
+</g>
+<g>
+  <rect x="522" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
+  <text x="576" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">vendor_map</text>
+  <text x="576" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">SaaS lookup</text>
+</g>
+
+<path d="M104 277 L104 310 L115 310 L115 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M222 277 L222 308 L281 308 L281 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M340 277 L340 308 L465 308 L465 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M576 277 L576 310 L599 310 L599 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+
+<g>
+  <rect x="40" y="340" width="148" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123);"/>
+  <text x="114" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245, 196, 179);font-size:14px;font-weight:500;">GitHub API</text>
+</g>
+<g>
+  <rect x="204" y="340" width="154" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123);"/>
+  <text x="281" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245, 196, 179);font-size:14px;font-weight:500;">Anthropic API</text>
+</g>
+<g>
+  <rect x="390" y="340" width="150" height="44" rx="8" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39);"/>
+  <text x="465" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250, 199, 117);font-size:14px;font-weight:500;">registry.json</text>
+</g>
+<g>
+  <rect x="558" y="340" width="82" height="44" rx="8" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39);"/>
+  <text x="599" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250, 199, 117);font-size:14px;font-weight:500;">reports/</text>
+</g>
+
+<line x1="40" y1="398" x2="640" y2="398" stroke="rgba(222, 220, 209, 0.3)" stroke-width="0.5"/>
+
+<rect x="55" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(68, 68, 65);stroke:rgb(180, 178, 169);"/>
+<text x="67" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Input</text>
+<rect x="112" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236);"/>
+<text x="124" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Entry</text>
+<rect x="170" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
+<text x="182" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Services</text>
+<rect x="248" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123);"/>
+<text x="260" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">External APIs</text>
+<rect x="358" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39);"/>
+<text x="370" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Storage / output</text>
+</svg>

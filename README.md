@@ -11,6 +11,8 @@ cd github-saas-lead-intelligence
 
 ## Structure
 
+![System architecture](architecture.svg)
+
 ```
 ├── CLAUDE.md                  ← Claude Code project brief
 ├── IMPLEMENTATION.md          ← Python architecture & design
