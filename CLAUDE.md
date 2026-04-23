@@ -7,7 +7,7 @@ An MCP server that monitors GitHub repositories for engineering activity and con
 - **Runtime:** Python 3.11+ (interpreted, no build step)
 - **MCP SDK:** `mcp` (Anthropic's Python SDK)
 - **GitHub API:** PyGithub (with ThreadPoolExecutor for parallel requests)
-- **Type validation:** Pydantic (data models)
+- **Data models:** Python `dataclasses` (DependencyFlag, DependencyAnalysis, RepoActivity, etc.)
 - **Web search/news:** Anthropic API with `web_search_20250305` tool (Phase 2+)
 - **Storage:** Local JSON file (`data/registry.json`) for the watched repo registry
 - **Output:** Markdown report files written to `reports/` (Phase 3+)
