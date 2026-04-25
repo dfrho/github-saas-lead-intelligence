@@ -13,6 +13,7 @@ from services.registry import add_watched_repo, list_watched_repos, update_regis
 def tmp_registry(tmp_path, monkeypatch):
     registry_path = tmp_path / "registry.json"
     monkeypatch.setattr("services.registry.REGISTRY_PATH", registry_path)
+    monkeypatch.setattr("services.registry._USE_DB", False)
     return registry_path
 
 

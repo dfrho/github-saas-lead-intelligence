@@ -38,5 +38,8 @@ pip-delete-this-directory.txt
 
 # Runtime data
 data/registry.json
-reports/
+/reports/
+
+# Claude Code
+.claude/
 

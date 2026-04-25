@@ -1,0 +1,16 @@
+venv/
+.env
+.env.*
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+tests/
+web/
+data/registry.json
+reports/
+fine_tuning/
+.git/
+.gitignore
+*.md
+*.svg

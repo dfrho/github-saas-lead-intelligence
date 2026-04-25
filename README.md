@@ -402,6 +402,156 @@ Parameters:
 - `since` — ISO 8601 date string; defaults to 30 days ago
 - `org_domain` — company domain for more targeted news search (e.g. `"vercel.com"`)
 
+---
+
+## Phase 5 — Web API (5a + 5b)
+
+### Database Setup (5a)
+
+Phase 5 adds a Postgres backend (Supabase) alongside the existing JSON registry. When `USE_DB=true` is set, all registry reads/writes go to Postgres instead of `data/registry.json`. The MCP server continues to work unchanged when `USE_DB` is not set.
+
+**New environment variables** (add to `.env`):
+
+```text
+DATABASE_URL=postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
+SUPABASE_URL=https://[ref].supabase.co
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_KEY=...
+USE_DB=true
+FRONTEND_ORIGIN=http://localhost:3000   # or your deployed frontend URL
+```
+
+**Create the three tables** in the Supabase SQL Editor:
+
+```sql
+CREATE TABLE watched_repos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    owner TEXT NOT NULL,
+    repo TEXT NOT NULL,
+    label TEXT,
+    added_at TIMESTAMPTZ DEFAULT now(),
+    last_checked TIMESTAMPTZ,
+    last_activity_hash TEXT,
+    UNIQUE (user_id, owner, repo)
+);
+
+CREATE TABLE reports (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    owner TEXT NOT NULL,
+    repo TEXT NOT NULL,
+    run_at TIMESTAMPTZ DEFAULT now(),
+    status TEXT DEFAULT 'pending',
+    score_composite INTEGER,
+    score_activity INTEGER,
+    score_pain_points INTEGER,
+    score_dependencies INTEGER,
+    score_team_size INTEGER,
+    score_growth INTEGER,
+    confidence_label TEXT,
+    markdown_body TEXT,
+    json_body JSONB
+);
+
+CREATE TABLE user_profiles (
+    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    company_name TEXT,
+    work_domain TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+Run with **"Run and enable RLS"** to enforce row-level security, then add the access policies:
+
+```sql
+CREATE POLICY "Users can view own watched repos" ON watched_repos FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own watched repos" ON watched_repos FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own watched repos" ON watched_repos FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own reports" ON reports FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own reports" ON reports FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own reports" ON reports FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own profile" ON user_profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profile" ON user_profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON user_profiles FOR UPDATE USING (auth.uid() = id);
+```
+
+**Migrate existing `data/registry.json` entries** to Postgres (one-time):
+
+```bash
+export $(grep -v '^#' .env | xargs)
+python scripts/migrate_registry_to_db.py
+
+# Optionally assign all repos to a specific user:
+python scripts/migrate_registry_to_db.py --user-id YOUR_SUPABASE_USER_UUID
+```
+
+### FastAPI Backend (5b)
+
+A REST API layer built on top of the same `src/services/` functions used by the MCP server.
+
+**Install new dependencies:**
+
+```bash
+pip install -e .
+```
+
+**Run the API server locally:**
+
+```bash
+uvicorn src.api.main:app --reload --port 8000
+```
+
+Interactive docs available at `http://localhost:8000/docs`.
+
+#### Endpoints
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/health` | None | Health check |
+| `POST` | `/repos` | Required | Watch a repository |
+| `GET` | `/repos` | Required | List watched repos |
+| `DELETE` | `/repos/{owner}/{repo}` | Required | Remove a repo |
+| `POST` | `/reports/run` | Optional | Trigger a report (pre-auth allowed) |
+| `GET` | `/reports/status/{id}` | None | Poll report progress |
+| `GET` | `/reports` | Required | List completed reports |
+| `GET` | `/reports/{id}` | Required | Fetch full report with score breakdown |
+| `GET` | `/reports/{id}/export?format=csv` | Required | Download as CSV |
+| `GET` | `/reports/{id}/export?format=txt` | Required | Download as plain text |
+| `GET` | `/users/me` | Required | Get user profile |
+| `POST` | `/users/me` | Required | Create or update user profile |
+
+**Auth:** All protected endpoints expect a Supabase JWT as `Authorization: Bearer <token>`. `POST /reports/run` also works without a token — the report is generated and held server-side; the auth gate fires when the user tries to view it.
+
+**Report progress:** After triggering a report, poll `GET /reports/status/{id}` every 3 seconds. The `status` field cycles through:
+
+```text
+Fetching repository activity...
+Analyzing commits...
+Classifying signals...
+Researching company news...
+Profiling contributors...
+Scoring the lead...
+Almost done...
+complete
+```
+
+**Report scores:** `GET /reports/{id}` returns all five individual factor scores alongside the composite:
+
+```json
+{
+  "score_composite": 74,
+  "score_activity": 82,
+  "score_pain_points": 71,
+  "score_dependencies": 55,
+  "score_team_size": 90,
+  "score_growth": 60,
+  "confidence_label": "Warm lead"
+}
+```
+
+---
+
 ## Registry Schema
 
 Each watched repo is stored in `data/registry.json` (auto-managed via CLI or MCP tools).
