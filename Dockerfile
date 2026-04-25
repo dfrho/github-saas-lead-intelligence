@@ -14,8 +14,7 @@ RUN pip install --no-cache-dir -e "."
 # Copy source
 COPY src/ ./src/
 
-# Expose FastAPI port
+# Railway injects $PORT — default to 8000 for local use
 EXPOSE 8000
 
-# Start FastAPI + embedded APScheduler
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
