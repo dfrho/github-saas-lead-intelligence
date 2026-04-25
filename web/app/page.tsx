@@ -76,7 +76,7 @@ export default function LandingPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-gray-700 hover:bg-gray-800 text-white" disabled={loading}>
               {loading ? "Starting..." : "Analyze Repository →"}
             </Button>
             {error && <p className="text-sm text-red-600">{error}</p>}
