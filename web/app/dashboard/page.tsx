@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { createClient } from "@/lib/supabase";
 import { fetchRepos, fetchReports } from "@/lib/api";
 import { RepoCard } from "@/components/RepoCard";
+import { NavBar } from "@/components/NavBar";
 import type { ReportSummary } from "@/lib/api";
 
 export default function DashboardPage() {
@@ -43,6 +44,8 @@ export default function DashboardPage() {
   }
 
   return (
+    <>
+    <NavBar />
     <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -73,5 +76,6 @@ export default function DashboardPage() {
         </div>
       )}
     </main>
+    </>
   );
 }

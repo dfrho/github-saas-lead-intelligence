@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
+import { NavBar } from "@/components/NavBar";
 import { scoreColor } from "@/lib/utils";
 
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -82,9 +83,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const vendors = json?.vendors as Array<Record<string, unknown>> | undefined;
 
   return (
+    <>
+    <NavBar />
     <main className="min-h-screen bg-white max-w-3xl mx-auto px-4 py-10 space-y-8">
-      <div className="flex items-center justify-between">
-        <a href="/dashboard" className="text-sm text-blue-600 hover:underline">← Dashboard</a>
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           <a href={exportReportUrl(id, "csv")} download>
             <Button size="sm" variant="outline">Export CSV</Button>
@@ -210,5 +212,6 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
     </main>
+    </>
   );
 }
