@@ -316,16 +316,22 @@ def get_report(
     user_id: str = Depends(get_current_user),
     conn=Depends(get_db),
 ):
-    """Fetch a single completed report. Only the owning user can access it."""
+    """Fetch a single completed report. Only the owning user can access it.
+
+    If the report was triggered anonymously (user_id IS NULL), it is claimed
+    by the first authenticated user who views it — this supports the pre-auth
+    flow where a visitor runs a report before signing in.
+    """
     with conn.cursor() as cur:
+        # Fetch report owned by this user OR unclaimed (pre-auth anonymous run)
         cur.execute(
             """
             SELECT id, owner, repo, run_at, status,
                    score_composite, score_activity, score_pain_points,
                    score_dependencies, score_team_size, score_growth,
-                   confidence_label, markdown_body, json_body
+                   confidence_label, markdown_body, json_body, user_id
             FROM reports
-            WHERE id = %s AND user_id = %s
+            WHERE id = %s AND (user_id = %s OR user_id IS NULL)
             """,
             (report_id, user_id),
         )
@@ -333,6 +339,12 @@ def get_report(
 
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    # Claim anonymous report on first authenticated access
+    if row[14] is None:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE reports SET user_id = %s WHERE id = %s", (user_id, report_id))
+        conn.commit()
 
     return ReportDetail(
         id=str(row[0]), owner=row[1], repo=row[2],
