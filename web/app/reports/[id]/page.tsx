@@ -157,7 +157,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                       {c.company ? <span className="text-gray-400 ml-2">· {String(c.company)}</span> : null}
                     </div>
                     <a
-                      href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${c.name || c.login} ${c.company || ""}`)}`}
+                      href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${c.name || c.login} ${String(c.company || "").replace(/^@/, "")}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:underline text-xs"
