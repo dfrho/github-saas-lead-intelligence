@@ -20,6 +20,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -131,7 +132,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Outreach Angle</h3>
                 <button
-                  onClick={() => navigator.clipboard.writeText(outreachAngle)}
+                  onClick={() => { navigator.clipboard.writeText(outreachAngle); setCopied(true); setTimeout(() => setCopied(false), 5000); }}
                   title="Copy outreach angle"
                   className="text-gray-400 hover:text-gray-700 transition-colors"
                 >
@@ -140,6 +141,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
                   </svg>
                 </button>
+                {copied && <span className="text-xs text-green-600 font-medium">Outreach copied</span>}
               </div>
               <p className="text-sm text-gray-700 leading-relaxed">{outreachAngle}</p>
             </div>
