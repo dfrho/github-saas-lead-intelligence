@@ -56,8 +56,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
   if (isGenerating) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-10">
-        <div className="bg-white rounded-xl border p-8 space-y-4">
+      <main className="min-h-screen bg-white max-w-3xl mx-auto px-4 py-10">
+        <div className="bg-white rounded-xl border border-gray-400 p-8 space-y-4">
           <h1 className="text-xl font-semibold text-gray-900">Generating your report...</h1>
           <ProgressIndicator reportId={id} onComplete={handleComplete} />
           <p className="text-sm text-gray-400">This usually takes 30–60 seconds.</p>
@@ -81,7 +81,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const vendors = json?.vendors as Array<Record<string, unknown>> | undefined;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-10 space-y-8">
+    <main className="min-h-screen bg-white max-w-3xl mx-auto px-4 py-10 space-y-8">
       <div className="flex items-center justify-between">
         <a href="/dashboard" className="text-sm text-blue-600 hover:underline">← Dashboard</a>
         <div className="flex gap-2">
@@ -188,7 +188,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       {report.markdown_body && (
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-4">Full Report</h2>
-          <div className="prose prose-sm max-w-none border rounded-xl p-6 bg-white">
+          <div className="prose prose-sm prose-gray max-w-none border border-gray-400 rounded-xl p-6 bg-white text-gray-900">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
               {report.markdown_body}
             </ReactMarkdown>
