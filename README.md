@@ -550,6 +550,101 @@ complete
 }
 ```
 
+### Weekly Scheduler (5c)
+
+Reports run automatically every Sunday at 02:00 UTC for every watched repository. The scheduler is embedded in the FastAPI process — no separate worker needed.
+
+**How it works:**
+
+- APScheduler (`BackgroundScheduler`) starts on app startup and stops on shutdown
+- Each Sunday it iterates all `watched_repos` rows and calls `run_full_analysis` for each
+- Repos with an unchanged `last_activity_hash` are skipped (no new commits = no new report)
+- On failure, the job retries once after 30 minutes; errors are logged to stderr — no silent failures
+- The schedule is configurable via env var (default: weekly):
+
+```text
+REPORT_CRON=0 2 * * 0    # Sunday 02:00 UTC (default)
+REPORT_CRON=0 2 * * *    # Daily 02:00 UTC
+```
+
+### Next.js Frontend (5d)
+
+A React frontend deployed to Vercel. All data fetching goes through the FastAPI backend — the frontend holds no business logic.
+
+**Pre-auth flow:**
+
+1. Visitor enters `owner/repo` on the landing page and clicks **Analyze Repository**
+2. `POST /reports/run` fires without a token — the report generates in the background
+3. A rotating progress indicator polls `GET /reports/status/{id}` every 3 seconds, showing live status messages ("Fetching repository activity...", "Analyzing commits...", etc.)
+4. When complete, the app checks for an active session:
+   - **Already signed in** → redirected directly to `/reports/{id}`
+   - **Not signed in** → redirected to `/login?next=/reports/{id}`
+5. After sign-in, the report is claimed by the authenticated user and displayed immediately
+
+**Authentication:**
+
+- Google OAuth via Supabase Auth
+- Registration collects work email (or Gmail), work web domain, and company name
+- Session tokens are stored in `localStorage` by the Supabase client and passed as `Authorization: Bearer` on all API calls
+- JWT validation on the backend supports both HS256 (legacy) and ES256 (Supabase default) tokens via the JWKS endpoint
+
+**Report viewer (`/reports/[id]`):**
+
+The viewer leads with a structured summary card, then renders the full Markdown report below the fold:
+
+- **Composite score + confidence label** at the top (e.g. "74/100 — Warm lead")
+- **Five factor score bars** with weights: Activity 25%, Pain Points 25%, Dependencies 20%, Team Size 15%, Growth Signals 15%
+- **Outreach Angle** paragraph with a one-click copy button (shows "Outreach copied" confirmation for 5 seconds)
+- **Top 3 contributors** with LinkedIn search links (GitHub `@org` prefix stripped automatically)
+- **Vendor recommendations** as badge chips
+- **Export buttons** — CSV (one row per contributor + signal summary) or TXT (plain Markdown)
+- Full Markdown report rendered below via `react-markdown` + `remark-gfm` + `rehype-highlight`
+
+**Frontend environment variables** (Vercel):
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://[ref].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_API_URL=https://your-railway-app.railway.app
+```
+
+### Deployment (5e)
+
+| Component | Host | Notes |
+| --- | --- | --- |
+| Frontend (Next.js) | Vercel | Zero-config, auto-deploys from `main` |
+| Backend (FastAPI + APScheduler) | Railway | Single Dockerfile, `$PORT` injected automatically |
+| Database + Auth | Supabase | Managed Postgres + Google OAuth |
+
+**Railway setup:**
+
+1. Connect GitHub repo → Railway detects the `Dockerfile` automatically
+2. Set environment variables in Railway dashboard (all vars from 5a, plus `PORT=8000`)
+3. Use the Supabase **Transaction Pooler** connection URL (port `6543`, not `5432`) — Railway uses IPv4, the direct connection is IPv6-only
+4. Set `SUPABASE_SERVICE_KEY` to the **Legacy JWT Secret** from Supabase → Authentication → JWT Settings (not the `service_role` API key)
+5. Add a healthcheck: path `/health`, timeout 30s
+
+**Vercel setup:**
+
+1. Import the repo and set **Root Directory** to `web/`
+2. Add the three `NEXT_PUBLIC_` environment variables
+3. Add your Railway backend URL to Supabase → Authentication → URL Configuration → Redirect URLs
+
+**All backend environment variables:**
+
+```text
+GITHUB_TOKEN=              # GitHub PAT with repo read scope
+ANTHROPIC_API_KEY=         # For summarize, classify, news, outreach
+DATABASE_URL=              # Supabase Transaction Pooler URL (port 6543)
+SUPABASE_URL=              # https://[ref].supabase.co
+SUPABASE_ANON_KEY=         # Public key (used by frontend Supabase client)
+SUPABASE_SERVICE_KEY=      # Legacy JWT Secret (for HS256/ES256 token validation)
+FRONTEND_ORIGIN=           # Your Vercel URL (for CORS)
+USE_DB=true
+PORT=8000
+REPORT_CRON=               # Optional, default: 0 2 * * 0
+```
+
 ---
 
 ## Registry Schema
@@ -599,7 +694,12 @@ See **[IMPLEMENTATION.md](IMPLEMENTATION.md)** for:
 
 ## Next Phase
 
-- **Phase 4** — Dependency signal scoring (fetch and analyze `package.json`/`pyproject.toml`, detect missing SaaS categories, flag outdated security-sensitive packages)
+**Phase 6** introduces monetization and team workspaces:
+
+- **6a** — Pricing tiers ($0 / $49 / $199 / $499/mo) with usage limits enforced server-side; Stripe integration
+- **6b** — Content distribution: YouTube demo, HackerNews launch post, README SEO pass, `llms.txt`
+- **6c** — Team workspaces: shared repo lists, role management, workspace-scoped billing
+- **6d** — Org-level aggregation: `watch_org()` enrolls all public repos in a GitHub org and produces a rollup report
 
 See [CLAUDE.md](CLAUDE.md) for the full phased build plan.
 
