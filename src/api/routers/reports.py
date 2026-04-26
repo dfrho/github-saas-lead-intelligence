@@ -200,7 +200,14 @@ def _run_report_sync(report_id: str, owner: str, repo: str, org_domain: str | No
         }
 
         # Build minimal markdown body for the DB (full rendering is done in the UI)
-        md = f"# Lead Report: {owner}/{repo}\n\n**Score:** {total}/100 — {_confidence_label(total)}\n\n## Synopsis\n\n{synopsis}\n\n## Outreach Angle\n\n{outreach_angle}\n"
+        md = (
+            f"# Lead Report: {owner}/{repo}\n\n"
+            f"**Score:** {total}/100 — {_confidence_label(total)}\n\n"
+            f"---\n\n"
+            f"## Synopsis\n\n{synopsis}\n\n"
+            f"---\n\n"
+            f"## Outreach Angle\n\n{outreach_angle}\n"
+        )
 
         with psycopg.connect(db_url) as conn:
             conn.execute(

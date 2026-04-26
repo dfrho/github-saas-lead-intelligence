@@ -128,7 +128,19 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           {/* Outreach angle */}
           {outreachAngle && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Outreach Angle</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Outreach Angle</h3>
+                <button
+                  onClick={() => navigator.clipboard.writeText(outreachAngle)}
+                  title="Copy outreach angle"
+                  className="text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                  </svg>
+                </button>
+              </div>
               <p className="text-sm text-gray-700 leading-relaxed">{outreachAngle}</p>
             </div>
           )}
