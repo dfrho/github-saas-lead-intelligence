@@ -6,10 +6,13 @@ which decodes the Bearer token using the Supabase JWT secret and returns
 the user_id (UUID string from the 'sub' claim).
 """
 
+import logging
 import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+
+logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -45,7 +48,14 @@ def get_current_user(
         if not user_id:
             raise ValueError("Missing sub claim")
         return user_id
-    except (JWTError, ValueError):
+    except (JWTError, ValueError) as e:
+        logger.error(
+            "JWT validation failed: %s: %s | secret_len=%d | token_prefix=%s",
+            type(e).__name__,
+            e,
+            len(_SUPABASE_JWT_SECRET),
+            token[:20] if token else "NONE",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
