@@ -49,12 +49,10 @@ def get_current_user(
             raise ValueError("Missing sub claim")
         return user_id
     except (JWTError, ValueError) as e:
-        logger.error(
-            "JWT validation failed: %s: %s | secret_len=%d | token_prefix=%s",
-            type(e).__name__,
-            e,
-            len(_SUPABASE_JWT_SECRET),
-            token[:20] if token else "NONE",
+        print(
+            f"[AUTH DEBUG] JWT validation failed: {type(e).__name__}: {e} | "
+            f"secret_len={len(_SUPABASE_JWT_SECRET)} | token_prefix={token[:20] if token else 'NONE'}",
+            flush=True,
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
