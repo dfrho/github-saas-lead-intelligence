@@ -19,8 +19,8 @@ export function RepoCard({ owner, repo, label, lastChecked, latestReport }: Repo
   const score = latestReport?.score_composite ?? null;
   const confidence = latestReport?.confidence_label ?? null;
 
-  return (
-    <Card className="flex flex-col justify-between">
+  const cardContent = (
+    <Card className={`flex flex-col justify-between ${latestReport ? "hover:shadow-md transition-shadow cursor-pointer" : ""}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -44,13 +44,17 @@ export function RepoCard({ owner, repo, label, lastChecked, latestReport }: Repo
             : "Never checked"}
         </p>
         {latestReport && (
-          <Link href={`/reports/${latestReport.id}`}>
-            <Button size="sm" variant="outline" className="w-full">
-              View Report
-            </Button>
-          </Link>
+          <span className="inline-flex items-center text-xs text-blue-600 font-medium">
+            View Report →
+          </span>
         )}
       </CardContent>
     </Card>
   );
+
+  return latestReport ? (
+    <Link href={`/reports/${latestReport.id}`} className="block">
+      {cardContent}
+    </Link>
+  ) : cardContent;
 }

@@ -347,10 +347,32 @@ def get_report(
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
-    # Claim anonymous report on first authenticated access
+    owner, repo = row[1], row[2]
+
+    # Claim anonymous report and auto-watch the repo on first authenticated access
     if row[14] is None:
         with conn.cursor() as cur:
             cur.execute("UPDATE reports SET user_id = %s WHERE id = %s", (user_id, report_id))
+            cur.execute(
+                """
+                INSERT INTO watched_repos (user_id, owner, repo, label)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (user_id, owner, repo) DO NOTHING
+                """,
+                (user_id, owner, repo, f"{owner}/{repo}"),
+            )
+        conn.commit()
+    else:
+        # Authenticated user viewing their own report — ensure repo is watched
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO watched_repos (user_id, owner, repo, label)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (user_id, owner, repo) DO NOTHING
+                """,
+                (user_id, owner, repo, f"{owner}/{repo}"),
+            )
         conn.commit()
 
     return ReportDetail(
