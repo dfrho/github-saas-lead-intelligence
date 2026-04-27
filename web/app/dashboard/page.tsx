@@ -36,11 +36,12 @@ export default function DashboardPage() {
 
   if (!token) return null;
 
-  // Map latest report per repo
-  const latestByRepo: Record<string, ReportSummary> = {};
+  // Group all reports by repo, sorted newest-first (API already returns desc)
+  const reportsByRepo: Record<string, ReportSummary[]> = {};
   for (const r of reports ?? []) {
     const key = `${r.owner}/${r.repo}`;
-    if (!latestByRepo[key]) latestByRepo[key] = r;
+    if (!reportsByRepo[key]) reportsByRepo[key] = [];
+    reportsByRepo[key].push(r);
   }
 
   return (
@@ -70,7 +71,7 @@ export default function DashboardPage() {
               repo={r.repo}
               label={r.label}
               lastChecked={r.last_checked}
-              latestReport={latestByRepo[`${r.owner}/${r.repo}`] ?? null}
+              reports={reportsByRepo[`${r.owner}/${r.repo}`] ?? []}
             />
           ))}
         </div>
