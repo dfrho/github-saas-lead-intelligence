@@ -43,3 +43,6 @@ data/registry.json
 # Claude Code
 .claude/
 
+# Local-only docs
+architecture.md
+
