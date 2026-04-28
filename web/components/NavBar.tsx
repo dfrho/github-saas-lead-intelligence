@@ -25,7 +25,7 @@ export function NavBar() {
     <nav className="border-b border-gray-200 bg-white px-4 py-3">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <a href="/dashboard" className="text-sm font-semibold text-gray-900 hover:text-gray-700">
-          GitHub Lead Intelligence
+          Repolytics
         </a>
         <div className="flex items-center gap-4 text-sm text-gray-500">
           {email && <span className="hidden sm:inline">{email}</span>}
