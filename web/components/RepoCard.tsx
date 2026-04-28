@@ -43,7 +43,7 @@ export function RepoCard({ owner, repo, label, lastChecked, reports }: RepoCardP
             : "Never checked"}
         </p>
         {latest && (
-          <span className="inline-flex items-center text-xs text-blue-600 font-medium">
+          <span className="inline-flex items-center text-xs font-medium" style={{ color: "#343ced" }}>
             View Report →
           </span>
         )}
@@ -62,12 +62,13 @@ export function RepoCard({ owner, repo, label, lastChecked, reports }: RepoCardP
       {/* Report history — older runs listed beneath the card */}
       {history.length > 0 && (
         <div className="pl-2 border-l-2 border-gray-100 space-y-1">
-          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Previous runs</p>
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "#484848", opacity: 0.4 }}>Previous runs</p>
           {history.map((r) => (
             <Link
               key={r.id}
               href={`/reports/${r.id}`}
-              className="flex items-center justify-between text-xs text-gray-600 hover:text-blue-600 py-0.5"
+              className="flex items-center justify-between text-xs py-0.5 transition-colors"
+              style={{ color: "#484848" }}
             >
               <span>{new Date(r.run_at).toLocaleDateString()}</span>
               {r.score_composite !== null && (

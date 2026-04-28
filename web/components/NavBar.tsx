@@ -22,17 +22,21 @@ export function NavBar() {
   }
 
   return (
-    <nav className="border-b border-gray-200 bg-white px-4 py-3">
+    <nav className="border-b border-gray-100 bg-white px-4 py-3">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
-        <a href="/dashboard" className="text-sm font-semibold text-gray-900 hover:text-gray-700">
+        <a
+          href="/dashboard"
+          className="text-base font-semibold tracking-tight"
+          style={{ fontFamily: "var(--font-space-grotesk)", color: "#343ced" }}
+        >
           Repolytics
         </a>
-        <div className="flex items-center gap-4 text-sm text-gray-500">
-          {email && <span className="hidden sm:inline">{email}</span>}
-          <a href="/account" className="hover:text-gray-900 transition-colors">Account</a>
+        <div className="flex items-center gap-4 text-sm" style={{ color: "#484848" }}>
+          {email && <span className="hidden sm:inline opacity-60">{email}</span>}
+          <a href="/account" className="hover:text-[#343ced] transition-colors">Account</a>
           <button
             onClick={handleSignOut}
-            className="hover:text-gray-900 transition-colors"
+            className="hover:text-[#343ced] transition-colors"
           >
             Sign out
           </button>

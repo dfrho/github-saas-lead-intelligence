@@ -14,31 +14,34 @@ describe("ScoreBar", () => {
     expect(screen.getByText("15% · —/100")).toBeInTheDocument();
   });
 
-  it("applies red color class for score >= 80", () => {
-    const { container } = render(<ScoreBar label="X" score={80} weight="25%" />);
-    const bar = container.querySelector(".bg-red-500");
+  it("applies blue fill for score >= 80", () => {
+    render(<ScoreBar label="X" score={80} weight="25%" />);
+    const bar = screen.getByTestId("score-bar-fill");
     expect(bar).toBeInTheDocument();
-    expect(bar).toHaveStyle({ width: "80%" });
+    expect(bar).toHaveStyle({ width: "80%", backgroundColor: "#343ced" });
   });
 
-  it("applies orange color class for score 60–79", () => {
-    const { container } = render(<ScoreBar label="X" score={65} weight="25%" />);
-    expect(container.querySelector(".bg-orange-400")).toBeInTheDocument();
+  it("applies lime fill for score 60–79", () => {
+    render(<ScoreBar label="X" score={65} weight="25%" />);
+    const bar = screen.getByTestId("score-bar-fill");
+    expect(bar).toHaveStyle({ backgroundColor: "#d8fd49" });
   });
 
-  it("applies yellow color class for score 40–59", () => {
-    const { container } = render(<ScoreBar label="X" score={50} weight="25%" />);
-    expect(container.querySelector(".bg-yellow-400")).toBeInTheDocument();
+  it("applies amber fill for score 40–59", () => {
+    render(<ScoreBar label="X" score={50} weight="25%" />);
+    const bar = screen.getByTestId("score-bar-fill");
+    expect(bar).toHaveStyle({ backgroundColor: "#f59e0b" });
   });
 
-  it("applies gray color class for score < 40", () => {
-    const { container } = render(<ScoreBar label="X" score={20} weight="25%" />);
-    expect(container.querySelector(".bg-gray-300")).toBeInTheDocument();
+  it("applies gray fill for score < 40", () => {
+    render(<ScoreBar label="X" score={20} weight="25%" />);
+    const bar = screen.getByTestId("score-bar-fill");
+    expect(bar).toHaveStyle({ backgroundColor: "#d1d5db" });
   });
 
   it("renders a zero-width bar when score is null", () => {
-    const { container } = render(<ScoreBar label="X" score={null} weight="20%" />);
-    const bar = container.querySelector(".bg-gray-300");
+    render(<ScoreBar label="X" score={null} weight="20%" />);
+    const bar = screen.getByTestId("score-bar-fill");
     expect(bar).toHaveStyle({ width: "0%" });
   });
 });

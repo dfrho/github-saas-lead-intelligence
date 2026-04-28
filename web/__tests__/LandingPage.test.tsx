@@ -30,7 +30,7 @@ beforeEach(() => {
 describe("LandingPage", () => {
   it("renders the heading and form", () => {
     render(<LandingPage />);
-    expect(screen.getByText("GitHub Lead Intelligence")).toBeInTheDocument();
+    expect(screen.getByText("Repolytics")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("e.g. stripe")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("e.g. stripe-python")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Analyze Repository/i })).toBeInTheDocument();

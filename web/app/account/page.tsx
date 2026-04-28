@@ -67,13 +67,13 @@ export default function AccountPage() {
     <>
       <NavBar />
       <main className="min-h-screen bg-white max-w-lg mx-auto px-4 py-10 space-y-8">
-        <h1 className="text-2xl font-bold text-gray-900">Account</h1>
+        <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}>Account</h1>
 
         <div className="border border-gray-200 rounded-xl p-6 space-y-6">
           {/* Email — read-only */}
           <div className="space-y-1">
-            <Label className="text-gray-700">Email</Label>
-            <p className="text-sm text-gray-500">{email}</p>
+            <Label style={{ color: "#484848" }}>Email</Label>
+            <p className="text-sm" style={{ color: "#484848", opacity: 0.6 }}>{email}</p>
           </div>
 
           {/* Editable profile fields */}
@@ -100,7 +100,8 @@ export default function AccountPage() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-gray-700 hover:bg-gray-800 text-white"
+                className="text-white"
+                style={{ backgroundColor: "#343ced" }}
               >
                 {saving ? "Saving..." : "Save changes"}
               </Button>
@@ -111,10 +112,11 @@ export default function AccountPage() {
         </div>
 
         <div className="border border-gray-200 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Sign out</h2>
+          <h2 className="text-sm font-semibold mb-3" style={{ color: "#484848" }}>Sign out</h2>
           <Button
             variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="border-gray-200 hover:border-[#343ced] hover:text-[#343ced] transition-colors"
+            style={{ color: "#484848" }}
             onClick={handleSignOut}
           >
             Sign out

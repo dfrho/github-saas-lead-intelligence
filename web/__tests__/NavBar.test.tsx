@@ -29,7 +29,7 @@ describe("NavBar", () => {
   it("renders site name, Account link, and Sign out button", async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     render(<NavBar />);
-    expect(screen.getByText("GitHub Lead Intelligence")).toBeInTheDocument();
+    expect(screen.getByText("Repolytics")).toBeInTheDocument();
     expect(screen.getByText("Account")).toBeInTheDocument();
     expect(screen.getByText("Sign out")).toBeInTheDocument();
   });
@@ -61,7 +61,7 @@ describe("NavBar", () => {
   it("site name links to /dashboard", () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     render(<NavBar />);
-    expect(screen.getByText("GitHub Lead Intelligence").closest("a")).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByText("Repolytics").closest("a")).toHaveAttribute("href", "/dashboard");
   });
 
   it("Account link points to /account", () => {

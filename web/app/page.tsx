@@ -42,13 +42,16 @@ export default function LandingPage() {
   }, [reportId, router]);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
       <div className="max-w-lg w-full space-y-8 text-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            GitHub Lead Intelligence
+          <h1
+            className="text-4xl font-semibold tracking-tight"
+            style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}
+          >
+            Repolytics
           </h1>
-          <p className="mt-3 text-gray-500">
+          <p className="mt-3 text-sm" style={{ color: "#484848", opacity: 0.7 }}>
             Enter any GitHub repository to see what the engineering team is building —
             and which SaaS vendors they&apos;re about to buy.
           </p>
@@ -76,29 +79,34 @@ export default function LandingPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full bg-gray-700 hover:bg-gray-800 text-white" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full text-white font-medium"
+              style={{ backgroundColor: "#343ced" }}
+              disabled={loading}
+            >
               {loading ? "Starting..." : "Analyze Repository →"}
             </Button>
             {error && <p className="text-sm text-red-600">{error}</p>}
           </form>
         ) : (
-          <div className="space-y-4 text-left bg-white rounded-xl border p-6">
-            <p className="text-sm font-medium text-gray-700">
+          <div className="space-y-4 text-left bg-white rounded-xl border border-gray-200 p-6">
+            <p className="text-sm font-medium" style={{ color: "#484848" }}>
               Analyzing <span className="font-mono">{owner}/{repo}</span>
             </p>
             <ProgressIndicator reportId={reportId} onComplete={handleComplete} />
-            <p className="text-xs text-gray-400">
+            <p className="text-xs" style={{ color: "#484848", opacity: 0.5 }}>
               Your report will be ready in about 30–60 seconds.
               You&apos;ll need to sign in to view it — we&apos;ll take you there automatically.
             </p>
           </div>
         )}
 
-        <p className="text-sm text-gray-400">
+        <p className="text-sm" style={{ color: "#484848", opacity: 0.5 }}>
           Already have an account?{" "}
-          <a href="/login" className="text-blue-600 hover:underline">Sign in</a>
+          <a href="/login" className="hover:underline" style={{ color: "#343ced" }}>Sign in</a>
           {" · "}
-          <a href="/dashboard" className="text-blue-600 hover:underline">Dashboard</a>
+          <a href="/dashboard" className="hover:underline" style={{ color: "#343ced" }}>Dashboard</a>
         </p>
       </div>
     </main>

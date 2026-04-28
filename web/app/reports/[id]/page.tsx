@@ -102,8 +102,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle className="text-lg">{report.owner}/{report.repo}</CardTitle>
-              <p className="text-xs text-gray-400 mt-1">
+              <CardTitle className="text-lg" style={{ fontFamily: "var(--font-space-grotesk)" }}>{report.owner}/{report.repo}</CardTitle>
+              <p className="text-xs mt-1" style={{ color: "#484848", opacity: 0.4 }}>
                 Generated {new Date(report.run_at).toLocaleString()}
               </p>
             </div>
@@ -112,7 +112,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 {report.score_composite}/100
               </span>
               {report.confidence_label && (
-                <p className="text-sm text-gray-500 mt-1">{report.confidence_label}</p>
+                <p className="text-sm mt-1" style={{ color: "#484848", opacity: 0.5 }}>{report.confidence_label}</p>
               )}
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <CardContent className="space-y-6">
           {/* Score breakdown bars */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Score Breakdown</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#484848", opacity: 0.5 }}>Score Breakdown</h3>
             <ScoreBar label="Activity" score={report.score_activity} weight="25%" />
             <ScoreBar label="Pain Points" score={report.score_pain_points} weight="25%" />
             <ScoreBar label="Dependencies" score={report.score_dependencies} weight="20%" />
@@ -132,7 +132,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           {outreachAngle && (
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Outreach Angle</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#484848", opacity: 0.5 }}>Outreach Angle</h3>
                 <button
                   onClick={() => { navigator.clipboard.writeText(outreachAngle); setCopied(true); setTimeout(() => setCopied(false), 5000); }}
                   title="Copy outreach angle"
@@ -145,14 +145,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 </button>
                 {copied && <span className="text-xs text-green-600 font-medium">Outreach copied</span>}
               </div>
-              <p className="text-sm text-gray-700 leading-relaxed">{outreachAngle}</p>
+              <p className="text-sm leading-relaxed" style={{ color: "#484848" }}>{outreachAngle}</p>
             </div>
           )}
 
           {/* Top contributors */}
           {contributors && contributors.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Top Contacts</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#484848", opacity: 0.5 }}>Top Contacts</h3>
               <div className="space-y-2">
                 {contributors.slice(0, 3).map((c) => (
                   <div key={c.login as string} className="flex items-center justify-between text-sm">
@@ -164,7 +164,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                       href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${c.name || c.login} ${String(c.company || "").replace(/^@/, "")}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline text-xs"
+                      className="text-xs hover:underline"
+                      style={{ color: "#343ced" }}
                     >
                       Find on LinkedIn →
                     </a>
@@ -177,7 +178,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           {/* Vendor recommendations */}
           {vendors && vendors.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Vendor Recommendations</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#484848", opacity: 0.5 }}>Vendor Recommendations</h3>
               <div className="flex flex-wrap gap-2">
                 {vendors.slice(0, 3).flatMap((v) =>
                   ((v.vendors as Array<Record<string, string>>) ?? []).slice(0, 2).map((vendor) => (
@@ -195,16 +196,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       {/* ── Synopsis ─────────────────────────────────────────────────── */}
       {synopsis && (
         <div>
-          <h2 className="text-base font-semibold text-gray-900 mb-2">Synopsis</h2>
-          <p className="text-sm text-gray-700 leading-relaxed">{synopsis}</p>
+          <h2 className="text-base font-semibold mb-2" style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}>Synopsis</h2>
+          <p className="text-sm leading-relaxed" style={{ color: "#484848" }}>{synopsis}</p>
         </div>
       )}
 
       {/* ── Full Markdown report ──────────────────────────────────────── */}
       {report.markdown_body && (
         <div>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Full Report</h2>
-          <div className="prose prose-sm prose-gray max-w-none border border-gray-400 rounded-xl p-6 bg-white text-gray-900">
+          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}>Full Report</h2>
+          <div className="prose prose-sm prose-gray max-w-none border border-gray-200 rounded-xl p-6 bg-white" style={{ color: "#484848" }}>
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
               {report.markdown_body}
             </ReactMarkdown>
