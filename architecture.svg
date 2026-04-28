@@ -87,6 +87,7 @@
 <path d="M165 377 L165 415 L120 415 L120 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
 <path d="M295 377 L295 415 L325 415 L325 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
 <path d="M425 377 L425 415 L630 415 L630 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M555 377 L555 420 L145 420 L145 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
 
 <!-- ── External APIs + Storage row ── -->
 <g>
