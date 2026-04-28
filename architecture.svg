@@ -1,97 +1,118 @@
-<svg width="100%" viewBox="0 0 680 440" role="img" xmlns="http://www.w3.org/2000/svg">
-<title>GitHub SaaS Lead Intelligence — system architecture</title>
-<desc>Five-layer architecture: Claude Code trigger feeds MCP Server and CLI entry points; MCP Server orchestrates five Python services via a bus; services call GitHub API and Anthropic API and write to registry.json and reports/</desc>
+<svg width="100%" viewBox="0 0 860 570" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>GitHub SaaS Lead Intelligence — system architecture v2</title>
+<desc>Dual-path architecture: left path shows Claude Code triggering the MCP Server; right path shows Browser using Next.js on Vercel, authenticated via Supabase Auth, calling FastAPI on Railway with embedded APScheduler. Both paths share five Python services (github_api, claude_api, registry, dep_analyzer, vendor_map), which call GitHub API and Anthropic API and persist to Supabase Postgres.</desc>
+
 <defs>
   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
     <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </marker>
 </defs>
 
+<!-- ── Row 1: Entry points ── -->
 <g>
-  <rect x="215" y="22" width="250" height="40" rx="8" stroke-width="0.5" style="fill:rgb(68, 68, 65);stroke:rgb(180, 178, 169);"/>
-  <text x="340" y="42" text-anchor="middle" dominant-baseline="central" style="fill:rgb(211, 209, 199);font-size:14px;font-weight:500;">Claude Code (MCP client)</text>
+  <rect x="55" y="22" width="220" height="44" rx="8" stroke-width="0.5" style="fill:rgb(68,68,65);stroke:rgb(180,178,169);"/>
+  <text x="165" y="44" text-anchor="middle" dominant-baseline="central" style="fill:rgb(211,209,199);font-size:14px;font-weight:500;">Claude Code (MCP client)</text>
+</g>
+<g>
+  <rect x="585" y="22" width="220" height="44" rx="8" stroke-width="0.5" style="fill:rgb(68,68,65);stroke:rgb(180,178,169);"/>
+  <text x="695" y="44" text-anchor="middle" dominant-baseline="central" style="fill:rgb(211,209,199);font-size:14px;font-weight:500;">Browser (Next.js / Vercel)</text>
 </g>
 
-<path d="M340 62 L340 82 L200 82 L200 115" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M340 82 L505 82 L505 115" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-
+<!-- ── Row 2: Orchestration ── -->
 <g>
-  <rect x="55" y="115" width="290" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236);"/>
-  <text x="200" y="136" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206, 203, 246);font-size:14px;font-weight:500;">MCP Server</text>
-  <text x="200" y="154" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175, 169, 236);font-size:12px;">main.py · tool orchestration</text>
+  <rect x="45" y="115" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="165" y="133" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">MCP Server</text>
+  <text x="165" y="151" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">main.py · tool orchestration</text>
 </g>
 <g>
-  <rect x="385" y="115" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236);"/>
-  <text x="505" y="136" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206, 203, 246);font-size:14px;font-weight:500;">CLI</text>
-  <text x="505" y="154" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175, 169, 236);font-size:12px;">cli.py · registry mgmt</text>
+  <rect x="575" y="115" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="695" y="133" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">Next.js / Vercel</text>
+  <text x="695" y="151" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">web/ · React frontend</text>
 </g>
 
-<line x1="200" y1="167" x2="200" y2="194" stroke="rgb(194, 192, 182)" stroke-width="1"/>
-<line x1="104" y1="194" x2="576" y2="194" stroke="rgb(194, 192, 182)" stroke-width="1"/>
-<line x1="104" y1="194" x2="104" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="222" y1="194" x2="222" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="340" y1="194" x2="340" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="458" y1="194" x2="458" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="576" y1="194" x2="576" y2="225" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-
+<!-- ── Row 3: FastAPI (web path only) ── -->
 <g>
-  <rect x="50" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
-  <text x="104" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">github_api</text>
-  <text x="104" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">GitHub wrapper</text>
-</g>
-<g>
-  <rect x="168" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
-  <text x="222" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">claude_api</text>
-  <text x="222" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">Claude wrapper</text>
-</g>
-<g>
-  <rect x="286" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
-  <text x="340" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">registry</text>
-  <text x="340" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">Persistence</text>
-</g>
-<g>
-  <rect x="404" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
-  <text x="458" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">dep_analyzer</text>
-  <text x="458" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">Dep scoring</text>
-</g>
-<g>
-  <rect x="522" y="225" width="108" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
-  <text x="576" y="245" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500;">vendor_map</text>
-  <text x="576" y="263" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px;">SaaS lookup</text>
+  <rect x="555" y="215" width="280" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="695" y="233" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">FastAPI / Railway</text>
+  <text x="695" y="251" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">src/api · Supabase Auth · APScheduler</text>
 </g>
 
-<path d="M104 277 L104 310 L115 310 L115 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M222 277 L222 308 L281 308 L281 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M340 277 L340 308 L465 308 L465 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M576 277 L576 310 L599 310 L599 340" fill="none" stroke="rgb(194, 192, 182)" stroke-width="1" marker-end="url(#arrow)"/>
+<!-- ── Vertical arrows: entry → orchestration ── -->
+<line x1="165" y1="66" x2="165" y2="115" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="695" y1="66" x2="695" y2="115" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="695" y1="167" x2="695" y2="215" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
 
+<!-- ── Bus connections: MCP + FastAPI → shared services ── -->
+<!-- MCP Server straight down to bus -->
+<line x1="165" y1="167" x2="165" y2="315" stroke="rgb(194,192,182)" stroke-width="1"/>
+<!-- FastAPI down to bus -->
+<line x1="695" y1="267" x2="695" y2="315" stroke="rgb(194,192,182)" stroke-width="1"/>
+<!-- Horizontal bus spanning both paths -->
+<line x1="165" y1="315" x2="695" y2="315" stroke="rgb(194,192,182)" stroke-width="1"/>
+<!-- Drops from bus to each service -->
+<line x1="165" y1="315" x2="165" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="295" y1="315" x2="295" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="425" y1="315" x2="425" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="555" y1="315" x2="555" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="685" y1="315" x2="685" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- ── Services row ── -->
 <g>
-  <rect x="40" y="340" width="148" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123);"/>
-  <text x="114" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245, 196, 179);font-size:14px;font-weight:500;">GitHub API</text>
+  <rect x="101" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="165" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">github_api</text>
+  <text x="165" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">GitHub wrapper</text>
 </g>
 <g>
-  <rect x="204" y="340" width="154" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123);"/>
-  <text x="281" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245, 196, 179);font-size:14px;font-weight:500;">Anthropic API</text>
+  <rect x="231" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="295" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">claude_api</text>
+  <text x="295" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">Claude wrapper</text>
 </g>
 <g>
-  <rect x="390" y="340" width="150" height="44" rx="8" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39);"/>
-  <text x="465" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250, 199, 117);font-size:14px;font-weight:500;">registry.json</text>
+  <rect x="361" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="425" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">registry</text>
+  <text x="425" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">JSON · Postgres</text>
 </g>
 <g>
-  <rect x="558" y="340" width="82" height="44" rx="8" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39);"/>
-  <text x="599" y="362" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250, 199, 117);font-size:14px;font-weight:500;">reports/</text>
+  <rect x="491" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="555" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">dep_analyzer</text>
+  <text x="555" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">Dep scoring</text>
+</g>
+<g>
+  <rect x="621" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="685" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">vendor_map</text>
+  <text x="685" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">SaaS lookup</text>
 </g>
 
-<line x1="40" y1="398" x2="640" y2="398" stroke="rgba(222, 220, 209, 0.3)" stroke-width="0.5"/>
+<!-- ── Service → External connections ── -->
+<path d="M165 377 L165 415 L120 415 L120 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M295 377 L295 415 L325 415 L325 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M425 377 L425 415 L630 415 L630 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
 
-<rect x="55" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(68, 68, 65);stroke:rgb(180, 178, 169);"/>
-<text x="67" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Input</text>
-<rect x="112" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236);"/>
-<text x="124" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Entry</text>
-<rect x="170" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);"/>
-<text x="182" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Services</text>
-<rect x="248" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123);"/>
-<text x="260" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">External APIs</text>
-<rect x="358" y="410" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39);"/>
-<text x="370" y="418" style="fill:rgb(194, 192, 182);font-size:12px;">Storage / output</text>
+<!-- ── External APIs + Storage row ── -->
+<g>
+  <rect x="30" y="440" width="180" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
+  <text x="120" y="462" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245,196,179);font-size:14px;font-weight:500;">GitHub API</text>
+</g>
+<g>
+  <rect x="235" y="440" width="180" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
+  <text x="325" y="462" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245,196,179);font-size:14px;font-weight:500;">Anthropic API</text>
+</g>
+<g>
+  <rect x="450" y="440" width="360" height="44" rx="8" stroke-width="0.5" style="fill:rgb(99,56,6);stroke:rgb(239,159,39);"/>
+  <text x="630" y="454" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250,199,117);font-size:14px;font-weight:500;">Supabase Postgres</text>
+  <text x="630" y="472" text-anchor="middle" dominant-baseline="central" style="fill:rgb(239,159,39);font-size:11px;">reports · watched_repos · auth</text>
+</g>
+
+<!-- ── Divider + Legend ── -->
+<line x1="30" y1="506" x2="830" y2="506" stroke="rgba(222,220,209,0.3)" stroke-width="0.5"/>
+<rect x="30" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(68,68,65);stroke:rgb(180,178,169);"/>
+<text x="42" y="526" style="fill:rgb(194,192,182);font-size:12px;">Input</text>
+<rect x="90" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+<text x="102" y="526" style="fill:rgb(194,192,182);font-size:12px;">Orchestration</text>
+<rect x="210" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+<text x="222" y="526" style="fill:rgb(194,192,182);font-size:12px;">Services</text>
+<rect x="292" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
+<text x="304" y="526" style="fill:rgb(194,192,182);font-size:12px;">External APIs</text>
+<rect x="406" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(99,56,6);stroke:rgb(239,159,39);"/>
+<text x="418" y="526" style="fill:rgb(194,192,182);font-size:12px;">Storage</text>
 </svg>
