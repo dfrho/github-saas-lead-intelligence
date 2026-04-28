@@ -105,8 +105,6 @@ export default function LandingPage() {
         <p className="text-sm" style={{ color: "#484848", opacity: 0.5 }}>
           Already have an account?{" "}
           <a href="/login" className="hover:underline" style={{ color: "#343ced" }}>Sign in</a>
-          {" · "}
-          <a href="/dashboard" className="hover:underline" style={{ color: "#343ced" }}>Dashboard</a>
         </p>
       </div>
     </main>
