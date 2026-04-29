@@ -26,14 +26,14 @@ run_full_analysis(owner, repo)
 │
 ├── claude_api.classify_signal()           ← maps synopsis → 20 domain categories (Anthropic API)
 │
-├── ── parallel ──────────────────────────────────────────────────────
-│   ├── github_api.fetch_contributor_profiles()   ← GitHub user/org lookups
-│   ├── claude_api.fetch_company_news()           ← web search via Anthropic API
-│   └── vendor_map.recommend_saas_vendors()       ← static domain → vendor lookup (free)
+├── claude_api.fetch_company_news()        ← web search via Anthropic API
 │
-├── claude_api.recommend_outreach_angle()  ← writes the outreach paragraph (Anthropic API)
+├── github_api.fetch_contributor_profiles()   ← GitHub user/org lookups
+├── dep_analyzer.analyze_dependencies()       ← fetches manifests from GitHub, scores gaps
+└── vendor_map.recommend_saas_vendors()       ← static domain → vendor lookup (free)
 │
-├── dep_analyzer.analyze_dependencies()    ← fetches manifests from GitHub, scores gaps
+├── claude_api.recommend_outreach_angle()  ← writes outreach paragraph using news, signals,
+│                                            and dependency findings (Anthropic API)
 │
 ├── scoring()                              ← deterministic: activity 25%, pain points 25%,
 │                                            dependencies 20%, team size 15%, growth 15%
