@@ -53,7 +53,7 @@
 <g>
   <rect x="680" y="200" width="145" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
   <text x="752" y="218" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">APScheduler</text>
-  <text x="752" y="236" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">weekly · cron · reads watched_repos</text>
+  <text x="752" y="236" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">weekly analysis</text>
 </g>
 
 <!-- ── Row 4: run_full_analysis ── -->
