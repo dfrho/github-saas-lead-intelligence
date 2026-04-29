@@ -13,35 +13,34 @@ cd github-saas-lead-intelligence
 
 ![System architecture](architecture.svg)
 
-```
-├── CLAUDE.md                  ← Claude Code project brief
-├── IMPLEMENTATION.md          ← Python architecture & design
-├── code_instructions/
-│   ├── mcp_tool_schema.md     ← MCP tool signatures
-│   ├── report_format.md       ← Report template (JSON + Markdown)
-│   └── enrichment_ideas.md    ← Phase 2+ signal ideas
-├── src/
-│   ├── main.py                ← MCP server entry point + tool orchestration
-│   ├── cli.py                 ← CLI for managing registry
-│   └── services/
-│       ├── registry.py        ← Registry persistence (data/registry.json)
-│       ├── github_api.py      ← GitHub API wrapper (PyGithub)
-│       ├── claude_api.py      ← Anthropic API wrapper (summarize, classify, news,
-│       │                          outreach angle, company domain detection)
-│       ├── dependency_analyzer.py  ← Parses manifest files; scores missing categories,
-│       │                               version lag, and competitor presence
-│       └── vendor_map.py      ← Static domain → curated SaaS vendor lookup
-├── tests/
-│   ├── test_main.py           ← Tool orchestration and scoring tests
-│   ├── test_claude_api.py     ← Claude API wrapper tests
-│   ├── test_github_api.py     ← GitHub API wrapper tests
-│   ├── test_dependency_analyzer.py  ← Dependency scoring and parser tests
-│   └── test_vendor_map.py     ← Vendor map and filter tests
-├── data/
-│   └── registry.json          ← Watched repos (auto-managed, .gitignored)
-├── reports/                   ← Generated lead reports (.gitignored)
-├── fine_tuning/               ← Real-world test run notes and report output
-└── pyproject.toml             ← Dependencies & configuration
+### run_full_analysis Call Chain
+
+```text
+run_full_analysis(owner, repo)
+│
+├── registry.get_repo()                    ← check if repo is watched
+│
+├── github_api.fetch_repo_activity()       ← commits, PRs, issues delta
+│
+├── claude_api.summarize_activity()        ← what are they building? (Anthropic API)
+│
+├── claude_api.classify_signal()           ← maps synopsis → 20 domain categories (Anthropic API)
+│
+├── ── parallel ──────────────────────────────────────────────────────
+│   ├── github_api.fetch_contributor_profiles()   ← GitHub user/org lookups
+│   ├── claude_api.fetch_company_news()           ← web search via Anthropic API
+│   └── vendor_map.recommend_saas_vendors()       ← static domain → vendor lookup (free)
+│
+├── claude_api.recommend_outreach_angle()  ← writes the outreach paragraph (Anthropic API)
+│
+├── dep_analyzer.analyze_dependencies()    ← fetches manifests from GitHub, scores gaps
+│
+├── scoring()                              ← deterministic: activity 25%, pain points 25%,
+│                                            dependencies 20%, team size 15%, growth 15%
+│
+├── registry.save_report()                 ← writes to Supabase Postgres
+│
+└── returns report_id
 ```
 
 ## Quick Start
