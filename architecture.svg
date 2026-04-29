@@ -1,6 +1,6 @@
-<svg width="100%" viewBox="0 0 860 570" role="img" xmlns="http://www.w3.org/2000/svg">
-<title>GitHub SaaS Lead Intelligence — system architecture v2</title>
-<desc>Dual-path architecture: left path shows Claude Code triggering the MCP Server; right path shows Browser using Next.js on Vercel, authenticated via Supabase Auth, calling FastAPI on Railway with embedded APScheduler. Both paths share five Python services (github_api, claude_api, registry, dep_analyzer, vendor_map), which call GitHub API and Anthropic API and persist to Supabase Postgres.</desc>
+<svg width="100%" viewBox="0 0 860 640" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>GitHub SaaS Lead Intelligence — system architecture v3</title>
+<desc>Dual-path architecture: MCP Server and FastAPI/APScheduler both call run_full_analysis(), which fans out to five shared Python services. The browser authenticates directly via Supabase Auth; services persist to Supabase Postgres.</desc>
 
 <defs>
   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -34,100 +34,123 @@
 
 <!-- ── Row 2: Orchestration ── -->
 <g>
-  <rect x="45" y="115" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
-  <text x="165" y="133" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">MCP Server</text>
-  <text x="165" y="151" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">main.py · tool orchestration</text>
+  <rect x="45" y="108" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="165" y="126" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">MCP Server</text>
+  <text x="165" y="144" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">main.py · tool orchestration</text>
 </g>
 <g>
-  <rect x="575" y="115" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
-  <text x="695" y="133" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">Next.js / Vercel</text>
-  <text x="695" y="151" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">web/ · React frontend</text>
+  <rect x="575" y="108" width="240" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="695" y="126" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">Next.js / Vercel</text>
+  <text x="695" y="144" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">web/ · React frontend</text>
 </g>
 
-<!-- ── Row 3: FastAPI (web path only) ── -->
+<!-- ── Row 3: FastAPI + APScheduler ── -->
 <g>
-  <rect x="555" y="215" width="280" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
-  <text x="695" y="233" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">FastAPI / Railway</text>
-  <text x="695" y="251" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">src/api · Supabase Auth · APScheduler</text>
+  <rect x="430" y="200" width="235" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="547" y="218" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">FastAPI / Railway</text>
+  <text x="547" y="236" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">src/api · JWT validation</text>
+</g>
+<g>
+  <rect x="680" y="200" width="145" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="752" y="218" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">APScheduler</text>
+  <text x="752" y="236" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">weekly · cron</text>
 </g>
 
-<!-- ── Vertical arrows: entry → orchestration ── -->
-<line x1="165" y1="66" x2="165" y2="115" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="695" y1="66" x2="695" y2="115" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="695" y1="167" x2="695" y2="215" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<!-- ── Row 4: run_full_analysis ── -->
+<g>
+  <rect x="150" y="300" width="520" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+  <text x="410" y="318" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">run_full_analysis()</text>
+  <text x="410" y="336" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">shared pipeline orchestrator · src/services/</text>
+</g>
 
-<!-- ── Bus connections: MCP + FastAPI → shared services ── -->
-<!-- MCP Server straight down to bus -->
-<line x1="165" y1="167" x2="165" y2="315" class="conn" stroke-width="1"/>
-<!-- FastAPI down to bus -->
-<line x1="695" y1="267" x2="695" y2="315" class="conn" stroke-width="1"/>
-<!-- Horizontal bus spanning both paths -->
-<line x1="165" y1="315" x2="695" y2="315" class="conn" stroke-width="1"/>
+<!-- ── Entry → Orchestration arrows ── -->
+<line x1="165" y1="66" x2="165" y2="108" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="695" y1="66" x2="695" y2="108" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- ── Next.js → FastAPI ── -->
+<path d="M695,160 L695,181 L547,181 L547,200" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- ── MCP Server, FastAPI, APScheduler → run_full_analysis ── -->
+<line x1="165" y1="160" x2="165" y2="300" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="547" y1="252" x2="547" y2="300" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M752,252 L752,276 L670,276 L670,300" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- ── run_full_analysis → services bus ── -->
+<line x1="410" y1="352" x2="410" y2="410" class="conn" stroke-width="1"/>
+<line x1="165" y1="410" x2="685" y2="410" class="conn" stroke-width="1"/>
 <!-- Drops from bus to each service -->
-<line x1="165" y1="315" x2="165" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="295" y1="315" x2="295" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="425" y1="315" x2="425" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="555" y1="315" x2="555" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="685" y1="315" x2="685" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="165" y1="410" x2="165" y2="420" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="295" y1="410" x2="295" y2="420" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="425" y1="410" x2="425" y2="420" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="555" y1="410" x2="555" y2="420" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="685" y1="410" x2="685" y2="420" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
 
 <!-- ── Services row ── -->
 <g>
-  <rect x="101" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
-  <text x="165" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">github_api</text>
-  <text x="165" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">GitHub wrapper</text>
+  <rect x="101" y="420" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="165" y="438" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">github_api</text>
+  <text x="165" y="456" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">GitHub wrapper</text>
 </g>
 <g>
-  <rect x="231" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
-  <text x="295" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">claude_api</text>
-  <text x="295" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">Claude wrapper</text>
+  <rect x="231" y="420" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="295" y="438" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">claude_api</text>
+  <text x="295" y="456" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">Claude wrapper</text>
 </g>
 <g>
-  <rect x="361" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
-  <text x="425" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">registry</text>
-  <text x="425" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">JSON · Postgres</text>
+  <rect x="361" y="420" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="425" y="438" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">registry</text>
+  <text x="425" y="456" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">JSON · Postgres</text>
 </g>
 <g>
-  <rect x="491" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
-  <text x="555" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">dep_analyzer</text>
-  <text x="555" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">Dep scoring</text>
+  <rect x="491" y="420" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="555" y="438" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">dep_analyzer</text>
+  <text x="555" y="456" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">Dep scoring</text>
 </g>
 <g>
-  <rect x="621" y="325" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
-  <text x="685" y="343" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">vendor_map</text>
-  <text x="685" y="361" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">SaaS lookup</text>
+  <rect x="621" y="420" width="128" height="52" rx="8" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+  <text x="685" y="438" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159,225,203);font-size:13px;font-weight:500;">vendor_map</text>
+  <text x="685" y="456" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93,202,165);font-size:11px;">SaaS lookup</text>
 </g>
 
 <!-- ── Service → External connections ── -->
-<path d="M165 377 L165 415 L120 415 L120 440" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M295 377 L295 415 L325 415 L325 440" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M425 377 L425 415 L630 415 L630 440" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M555 377 L555 420 L145 420 L145 440" fill="none" class="conn-dashed" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M165,472 L165,505 L104,505 L104,530" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M295,472 L295,505 L272,505 L272,530" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M425,472 L425,505 L466,505 L466,530" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M555,472 L555,510 L120,510 L120,530" fill="none" class="conn-dashed" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- ── Browser → Supabase Auth (direct OAuth, routes along right edge) ── -->
+<path d="M815,134 L843,134 L843,552 L726,552" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
 
 <!-- ── External APIs + Storage row ── -->
 <g>
-  <rect x="30" y="440" width="180" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
-  <text x="120" y="462" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245,196,179);font-size:14px;font-weight:500;">GitHub API</text>
+  <rect x="30" y="530" width="148" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
+  <text x="104" y="552" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245,196,179);font-size:14px;font-weight:500;">GitHub API</text>
 </g>
 <g>
-  <rect x="235" y="440" width="180" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
-  <text x="325" y="462" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245,196,179);font-size:14px;font-weight:500;">Anthropic API</text>
+  <rect x="193" y="530" width="158" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
+  <text x="272" y="552" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245,196,179);font-size:14px;font-weight:500;">Anthropic API</text>
 </g>
 <g>
-  <rect x="450" y="440" width="360" height="44" rx="8" stroke-width="0.5" style="fill:rgb(99,56,6);stroke:rgb(239,159,39);"/>
-  <text x="630" y="454" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250,199,117);font-size:14px;font-weight:500;">Supabase Postgres</text>
-  <text x="630" y="472" text-anchor="middle" dominant-baseline="central" style="fill:rgb(239,159,39);font-size:11px;">reports · watched_repos · auth</text>
+  <rect x="366" y="530" width="200" height="44" rx="8" stroke-width="0.5" style="fill:rgb(99,56,6);stroke:rgb(239,159,39);"/>
+  <text x="466" y="544" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250,199,117);font-size:14px;font-weight:500;">Supabase Postgres</text>
+  <text x="466" y="562" text-anchor="middle" dominant-baseline="central" style="fill:rgb(239,159,39);font-size:11px;">reports · watched_repos</text>
+</g>
+<g>
+  <rect x="581" y="530" width="145" height="44" rx="8" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
+  <text x="653" y="544" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245,196,179);font-size:14px;font-weight:500;">Supabase Auth</text>
+  <text x="653" y="562" text-anchor="middle" dominant-baseline="central" style="fill:rgb(240,153,123);font-size:11px;">Google OAuth · JWT</text>
 </g>
 
 <!-- ── Divider + Legend ── -->
-<line x1="30" y1="506" x2="830" y2="506" class="divider-line" stroke-width="0.5"/>
-<rect x="30" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(68,68,65);stroke:rgb(180,178,169);"/>
-<text x="42" y="526" class="legend-label">Input</text>
-<rect x="90" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
-<text x="102" y="526" class="legend-label">Orchestration</text>
-<rect x="210" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
-<text x="222" y="526" class="legend-label">Services</text>
-<rect x="292" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
-<text x="304" y="526" class="legend-label">External APIs</text>
-<rect x="406" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(99,56,6);stroke:rgb(239,159,39);"/>
-<text x="418" y="526" class="legend-label">Storage</text>
+<line x1="30" y1="594" x2="830" y2="594" class="divider-line" stroke-width="0.5"/>
+<rect x="30" y="606" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(68,68,65);stroke:rgb(180,178,169);"/>
+<text x="42" y="614" class="legend-label">Input</text>
+<rect x="90" y="606" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
+<text x="102" y="614" class="legend-label">Orchestration</text>
+<rect x="210" y="606" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
+<text x="222" y="614" class="legend-label">Services</text>
+<rect x="292" y="606" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
+<text x="304" y="614" class="legend-label">External APIs</text>
+<rect x="406" y="606" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(99,56,6);stroke:rgb(239,159,39);"/>
+<text x="418" y="614" class="legend-label">Storage</text>
 </svg>
