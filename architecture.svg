@@ -1,6 +1,6 @@
 <svg width="100%" viewBox="0 0 860 640" role="img" xmlns="http://www.w3.org/2000/svg">
 <title>GitHub SaaS Lead Intelligence — system architecture v3</title>
-<desc>Dual-path architecture: MCP Server and FastAPI/APScheduler both call run_full_analysis(), which fans out to five shared Python services. The browser authenticates directly via Supabase Auth; services persist to Supabase Postgres.</desc>
+<desc>Dual-path architecture: MCP Server and FastAPI/APScheduler both call run_full_analysis(), which fans out to five shared Python services. Browser and FastAPI both connect to Supabase Auth (OAuth round-trip and JWT validation respectively); services persist to Supabase Postgres.</desc>
 
 <defs>
   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -53,7 +53,7 @@
 <g>
   <rect x="680" y="200" width="145" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
   <text x="752" y="218" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206,203,246);font-size:14px;font-weight:500;">APScheduler</text>
-  <text x="752" y="236" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">weekly · cron</text>
+  <text x="752" y="236" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175,169,236);font-size:12px;">weekly · cron · reads watched_repos</text>
 </g>
 
 <!-- ── Row 4: run_full_analysis ── -->
@@ -118,8 +118,11 @@
 <path d="M425,472 L425,505 L466,505 L466,530" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
 <path d="M555,472 L555,510 L120,510 L120,530" fill="none" class="conn-dashed" stroke-width="1" marker-end="url(#arrow)"/>
 
-<!-- ── Browser → Supabase Auth (direct OAuth, routes along right edge) ── -->
-<path d="M815,134 L843,134 L843,552 L726,552" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<!-- ── Browser ↔ Supabase Auth (OAuth round-trip, routes along right edge) ── -->
+<path d="M815,134 L843,134 L843,552 L726,552" fill="none" class="conn" stroke-width="1" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+
+<!-- ── FastAPI → Supabase Auth (JWT validation, dashed) ── -->
+<path d="M665,252 L665,280 L835,280 L835,541 L726,541" fill="none" class="conn-dashed" stroke-width="1" marker-end="url(#arrow)"/>
 
 <!-- ── External APIs + Storage row ── -->
 <g>
