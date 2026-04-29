@@ -51,7 +51,7 @@ export default function LandingPage() {
           >
             Repolytics
           </h1>
-          <p className="mt-3 text-sm" style={{ color: "#484848", opacity: 0.7 }}>
+          <p className="mt-3 text-sm" style={{ color: "var(--text-muted)" }}>
             Enter any GitHub repository to see what the engineering team is building —
             and which SaaS categories they&apos;re about to buy.
           </p>
@@ -102,7 +102,7 @@ export default function LandingPage() {
           </div>
         )}
 
-        <p className="text-sm" style={{ color: "#484848", opacity: 0.5 }}>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
           Already have an account?{" "}
           <a href="/login" className="hover:underline" style={{ color: "#343ced" }}>Sign in</a>
         </p>
