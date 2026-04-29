@@ -32,7 +32,7 @@ export function NavBar() {
           Repolytics
         </a>
         <div className="flex items-center gap-4 text-sm" style={{ color: "#484848" }}>
-          {email && <span className="hidden sm:inline opacity-60">{email}</span>}
+          {email && <span className="hidden sm:inline" style={{ color: "var(--text-muted)" }}>{email}</span>}
           <a href="/account" className="hover:text-[#343ced] transition-colors">Account</a>
           <button
             onClick={handleSignOut}

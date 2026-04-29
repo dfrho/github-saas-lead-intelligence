@@ -18,7 +18,7 @@ export function ScoreBar({ label, score, weight }: ScoreBarProps) {
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
         <span className="font-medium" style={{ color: "#484848" }}>{label}</span>
-        <span style={{ color: "#484848", opacity: 0.5 }}>{weight} · {score ?? "—"}/100</span>
+        <span style={{ color: "var(--text-muted)" }}>{weight} · {score ?? "—"}/100</span>
       </div>
       <div className="h-2 w-full rounded-full" style={{ backgroundColor: "#f3f4f6" }}>
         <div

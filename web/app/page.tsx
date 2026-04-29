@@ -53,7 +53,7 @@ export default function LandingPage() {
           </h1>
           <p className="mt-3 text-sm" style={{ color: "#484848", opacity: 0.7 }}>
             Enter any GitHub repository to see what the engineering team is building —
-            and which SaaS vendors they&apos;re about to buy.
+            and which SaaS categories they&apos;re about to buy.
           </p>
         </div>
 

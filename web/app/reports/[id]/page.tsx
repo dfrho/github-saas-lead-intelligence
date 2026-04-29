@@ -103,7 +103,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle className="text-lg" style={{ fontFamily: "var(--font-space-grotesk)" }}>{report.owner}/{report.repo}</CardTitle>
-              <p className="text-xs mt-1" style={{ color: "#484848", opacity: 0.4 }}>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 Generated {new Date(report.run_at).toLocaleString()}
               </p>
             </div>
@@ -112,7 +112,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 {report.score_composite}/100
               </span>
               {report.confidence_label && (
-                <p className="text-sm mt-1" style={{ color: "#484848", opacity: 0.5 }}>{report.confidence_label}</p>
+                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{report.confidence_label}</p>
               )}
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <CardContent className="space-y-6">
           {/* Score breakdown bars */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#484848", opacity: 0.5 }}>Score Breakdown</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Score Breakdown</h3>
             <ScoreBar label="Activity" score={report.score_activity} weight="25%" />
             <ScoreBar label="Pain Points" score={report.score_pain_points} weight="25%" />
             <ScoreBar label="Dependencies" score={report.score_dependencies} weight="20%" />
@@ -132,7 +132,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           {outreachAngle && (
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#484848", opacity: 0.5 }}>Outreach Angle</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Outreach Angle</h3>
                 <button
                   onClick={() => { navigator.clipboard.writeText(outreachAngle); setCopied(true); setTimeout(() => setCopied(false), 5000); }}
                   title="Copy outreach angle"
@@ -152,7 +152,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           {/* Top contributors */}
           {contributors && contributors.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#484848", opacity: 0.5 }}>Top Contacts</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--text-muted)" }}>Top Contacts</h3>
               <div className="space-y-2">
                 {contributors.slice(0, 3).map((c) => (
                   <div key={c.login as string} className="flex items-center justify-between text-sm">
@@ -177,17 +177,20 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
           {/* Vendor recommendations */}
           {vendors && vendors.length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#484848", opacity: 0.5 }}>Vendor Recommendations</h3>
-              <div className="flex flex-wrap gap-2">
-                {vendors.slice(0, 3).flatMap((v) =>
-                  ((v.vendors as Array<Record<string, string>>) ?? []).slice(0, 2).map((vendor) => (
-                    <Badge key={vendor.name} variant="outline">
-                      {vendor.name}
-                    </Badge>
-                  ))
-                )}
-              </div>
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Vendor Recommendations</h3>
+              {vendors.slice(0, 3).map((v) => (
+                <div key={v.domain as string}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: "#343ced" }}>
+                    {(v.domain as string).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {((v.vendors as Array<Record<string, string>>) ?? []).slice(0, 2).map((vendor) => (
+                      <Badge key={vendor.name} variant="outline">{vendor.name}</Badge>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
