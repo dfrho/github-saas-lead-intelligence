@@ -8,6 +8,20 @@
   </marker>
 </defs>
 
+<style>
+  .conn { stroke: rgb(194,192,182); }
+  .conn-dashed { stroke: rgb(194,192,182); stroke-dasharray: 4 3; }
+  .divider-line { stroke: rgba(222,220,209,0.3); }
+  .legend-label { fill: rgb(194,192,182); font-size: 12px; }
+
+  @media (prefers-color-scheme: light) {
+    .conn { stroke: rgb(60,60,60); }
+    .conn-dashed { stroke: rgb(60,60,60); }
+    .divider-line { stroke: rgba(60,60,60,0.35); }
+    .legend-label { fill: rgb(30,30,30); }
+  }
+</style>
+
 <!-- ── Row 1: Entry points ── -->
 <g>
   <rect x="55" y="22" width="220" height="44" rx="8" stroke-width="0.5" style="fill:rgb(68,68,65);stroke:rgb(180,178,169);"/>
@@ -38,23 +52,23 @@
 </g>
 
 <!-- ── Vertical arrows: entry → orchestration ── -->
-<line x1="165" y1="66" x2="165" y2="115" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="695" y1="66" x2="695" y2="115" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="695" y1="167" x2="695" y2="215" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="165" y1="66" x2="165" y2="115" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="695" y1="66" x2="695" y2="115" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="695" y1="167" x2="695" y2="215" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
 
 <!-- ── Bus connections: MCP + FastAPI → shared services ── -->
 <!-- MCP Server straight down to bus -->
-<line x1="165" y1="167" x2="165" y2="315" stroke="rgb(194,192,182)" stroke-width="1"/>
+<line x1="165" y1="167" x2="165" y2="315" class="conn" stroke-width="1"/>
 <!-- FastAPI down to bus -->
-<line x1="695" y1="267" x2="695" y2="315" stroke="rgb(194,192,182)" stroke-width="1"/>
+<line x1="695" y1="267" x2="695" y2="315" class="conn" stroke-width="1"/>
 <!-- Horizontal bus spanning both paths -->
-<line x1="165" y1="315" x2="695" y2="315" stroke="rgb(194,192,182)" stroke-width="1"/>
+<line x1="165" y1="315" x2="695" y2="315" class="conn" stroke-width="1"/>
 <!-- Drops from bus to each service -->
-<line x1="165" y1="315" x2="165" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="295" y1="315" x2="295" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="425" y1="315" x2="425" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="555" y1="315" x2="555" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<line x1="685" y1="315" x2="685" y2="325" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="165" y1="315" x2="165" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="295" y1="315" x2="295" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="425" y1="315" x2="425" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="555" y1="315" x2="555" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="685" y1="315" x2="685" y2="325" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
 
 <!-- ── Services row ── -->
 <g>
@@ -84,10 +98,10 @@
 </g>
 
 <!-- ── Service → External connections ── -->
-<path d="M165 377 L165 415 L120 415 L120 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M295 377 L295 415 L325 415 L325 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M425 377 L425 415 L630 415 L630 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" marker-end="url(#arrow)"/>
-<path d="M555 377 L555 420 L145 420 L145 440" fill="none" stroke="rgb(194,192,182)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+<path d="M165 377 L165 415 L120 415 L120 440" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M295 377 L295 415 L325 415 L325 440" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M425 377 L425 415 L630 415 L630 440" fill="none" class="conn" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M555 377 L555 420 L145 420 L145 440" fill="none" class="conn-dashed" stroke-width="1" marker-end="url(#arrow)"/>
 
 <!-- ── External APIs + Storage row ── -->
 <g>
@@ -105,15 +119,15 @@
 </g>
 
 <!-- ── Divider + Legend ── -->
-<line x1="30" y1="506" x2="830" y2="506" stroke="rgba(222,220,209,0.3)" stroke-width="0.5"/>
+<line x1="30" y1="506" x2="830" y2="506" class="divider-line" stroke-width="0.5"/>
 <rect x="30" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(68,68,65);stroke:rgb(180,178,169);"/>
-<text x="42" y="526" style="fill:rgb(194,192,182);font-size:12px;">Input</text>
+<text x="42" y="526" class="legend-label">Input</text>
 <rect x="90" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(60,52,137);stroke:rgb(175,169,236);"/>
-<text x="102" y="526" style="fill:rgb(194,192,182);font-size:12px;">Orchestration</text>
+<text x="102" y="526" class="legend-label">Orchestration</text>
 <rect x="210" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(8,80,65);stroke:rgb(93,202,165);"/>
-<text x="222" y="526" style="fill:rgb(194,192,182);font-size:12px;">Services</text>
+<text x="222" y="526" class="legend-label">Services</text>
 <rect x="292" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(113,43,19);stroke:rgb(240,153,123);"/>
-<text x="304" y="526" style="fill:rgb(194,192,182);font-size:12px;">External APIs</text>
+<text x="304" y="526" class="legend-label">External APIs</text>
 <rect x="406" y="518" width="8" height="8" rx="2" stroke-width="0.5" style="fill:rgb(99,56,6);stroke:rgb(239,159,39);"/>
-<text x="418" y="526" style="fill:rgb(194,192,182);font-size:12px;">Storage</text>
+<text x="418" y="526" class="legend-label">Storage</text>
 </svg>
