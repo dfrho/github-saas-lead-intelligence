@@ -45,6 +45,7 @@ def summarize_activity(activity_data: dict) -> str:
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=500,
+        temperature=0,
         messages=[
             {
                 "role": "user",
@@ -101,6 +102,7 @@ def classify_signal(summary: str) -> list[dict]:
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=1000,
+        temperature=0,
         messages=[
             {
                 "role": "user",
@@ -229,6 +231,7 @@ def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=4000,
+        temperature=0,
         tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=[
             {
@@ -325,6 +328,7 @@ def detect_company_own_domains(org: str, org_domain: str = None) -> list[str]:
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=500,
+        temperature=0,
         tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=[
             {
@@ -396,6 +400,7 @@ def recommend_outreach_angle(
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=400,
+        temperature=0.3,
         messages=[
             {
                 "role": "user",
