@@ -51,9 +51,9 @@ export default function LandingPage() {
           >
             Repolytics
           </h1>
-          <p className="mt-3 text-sm" style={{ color: "var(--text-muted)" }}>
-            Enter any GitHub repository to see what the engineering team is building —
-            and which SaaS categories they&apos;re about to buy.
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            Turns GitHub commit activity into purchase-intent signals. See what any engineering team is building and which SaaS categories they&apos;ll be buying in the next 60–120 days.{" "}
+            <span className="block mt-1">For SaaS sales, BDR, and strategic GTM teams.</span>
           </p>
         </div>
 
