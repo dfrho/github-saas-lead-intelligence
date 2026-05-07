@@ -676,6 +676,10 @@ Claude-generated content is validated and filtered at multiple points in the pip
 
 **Dependency scoring is fully deterministic** — All package detection, version lag, and competitor presence checks use static lookup tables with no Claude involvement, eliminating hallucination risk in that component entirely.
 
+**Temperature pinning** — All Claude calls used for structured extraction (`summarize_activity`, `classify_signal`, `fetch_company_news`, `detect_company_own_domains`) run at `temperature=0` for deterministic, factual output. The outreach angle (`recommend_outreach_angle`) uses `temperature=0.3` to allow natural copy variation while staying grounded.
+
+**Cross-encoder re-ranking** — After `fetch_company_news` retrieves and post-processes news items, a second Claude pass (`src/services/reranker.py` — the re-ranking service) scores each item 1–10 for relevance to the target org. Items scoring below 7 are hard-dropped before any results reach the LLM. This two-pass approach catches items that pass date and deduplication filters but are not actually about the target company.
+
 ## Environment Variables
 
 - **`GITHUB_TOKEN`** (required) — GitHub personal access token with `repo` scope
