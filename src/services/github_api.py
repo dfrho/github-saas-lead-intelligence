@@ -189,28 +189,30 @@ def fetch_repo_activity(
 
     fetched_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-    # Fetch in parallel using ThreadPoolExecutor
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        commits_future = executor.submit(_fetch_commits, github, owner, repo, since)
-        prs_future = executor.submit(_fetch_pull_requests, github, owner, repo, since)
-        issues_future = executor.submit(_fetch_issues, github, owner, repo, since)
+    # Fetch in parallel. Executor is managed manually (not via `with`) so that
+    # shutdown(wait=False) can be called on timeout — the `with` form always calls
+    # shutdown(wait=True) on __exit__, which re-hangs if threads are still blocked.
+    executor = ThreadPoolExecutor(max_workers=3)
+    commits_future = executor.submit(_fetch_commits, github, owner, repo, since)
+    prs_future = executor.submit(_fetch_pull_requests, github, owner, repo, since)
+    issues_future = executor.submit(_fetch_issues, github, owner, repo, since)
 
-        done, not_done = wait(
-            [commits_future, prs_future, issues_future],
-            timeout=_FETCH_TOTAL_TIMEOUT,
-            return_when=ALL_COMPLETED,
+    done, not_done = wait(
+        [commits_future, prs_future, issues_future],
+        timeout=_FETCH_TOTAL_TIMEOUT,
+        return_when=ALL_COMPLETED,
+    )
+    if not_done:
+        executor.shutdown(wait=False)
+        raise TimeoutError(
+            f"GitHub API fetch timed out after {_FETCH_TOTAL_TIMEOUT}s "
+            f"({len(not_done)} of 3 tasks still running)"
         )
-        if not_done:
-            for f in not_done:
-                f.cancel()
-            raise TimeoutError(
-                f"GitHub API fetch timed out after {_FETCH_TOTAL_TIMEOUT}s "
-                f"({len(not_done)} of 3 tasks still running)"
-            )
+    executor.shutdown(wait=False)
 
-        commits = commits_future.result()
-        pull_requests = prs_future.result()
-        issues = issues_future.result()
+    commits = commits_future.result()
+    pull_requests = prs_future.result()
+    issues = issues_future.result()
 
     # Extract latest commit SHA
     latest_commit_sha = commits[0].sha if commits else None
