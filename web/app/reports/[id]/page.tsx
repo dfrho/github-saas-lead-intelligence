@@ -200,7 +200,9 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       {synopsis && (
         <div>
           <h2 className="text-base font-semibold mb-2" style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}>Synopsis</h2>
-          <p className="text-sm leading-relaxed" style={{ color: "#484848" }}>{synopsis}</p>
+          <div className="prose prose-sm prose-gray max-w-none text-sm leading-relaxed" style={{ color: "#484848" }}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{synopsis}</ReactMarkdown>
+          </div>
         </div>
       )}
 
