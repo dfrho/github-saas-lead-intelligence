@@ -2,9 +2,14 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED, TimeoutError as FuturesTimeoutError
 
 from github import Github, Auth
+
+_GITHUB_REQUEST_TIMEOUT = 30   # seconds per HTTP request to GitHub API
+_FETCH_TOTAL_TIMEOUT = 120     # seconds for all three parallel fetches combined
+_MAX_PRS = 200                 # page-iteration cap for pull requests
+_MAX_ISSUES = 500              # page-iteration cap for issues
 
 
 @dataclass
@@ -69,7 +74,7 @@ def _get_github_client() -> Github:
     token = os.getenv("GITHUB_TOKEN")
     if not token:
         raise ValueError("GITHUB_TOKEN environment variable is required")
-    return Github(auth=Auth.Token(token))
+    return Github(auth=Auth.Token(token), timeout=_GITHUB_REQUEST_TIMEOUT)
 
 
 def _fetch_commits(github: Github, owner: str, repo: str, since_str: str) -> list[Commit]:
@@ -111,6 +116,8 @@ def _fetch_pull_requests(github: Github, owner: str, repo: str, since_str: str) 
     for pr in repo_obj.get_pulls(state="all", sort="updated", direction="desc"):
         if pr.updated_at and pr.updated_at < since_dt:
             break  # sorted descending — nothing older will match
+        if len(prs) >= _MAX_PRS:
+            break
 
         prs.append(
             PullRequest(
@@ -131,6 +138,8 @@ def _fetch_issues(github: Github, owner: str, repo: str, since_str: str) -> list
 
     issues = []
     for item in repo_obj.get_issues(state="all", since=since_dt):
+        if len(issues) >= _MAX_ISSUES:
+            break
         # Skip if it's actually a PR
         if item.pull_request:
             continue
@@ -185,6 +194,19 @@ def fetch_repo_activity(
         commits_future = executor.submit(_fetch_commits, github, owner, repo, since)
         prs_future = executor.submit(_fetch_pull_requests, github, owner, repo, since)
         issues_future = executor.submit(_fetch_issues, github, owner, repo, since)
+
+        done, not_done = wait(
+            [commits_future, prs_future, issues_future],
+            timeout=_FETCH_TOTAL_TIMEOUT,
+            return_when=ALL_COMPLETED,
+        )
+        if not_done:
+            for f in not_done:
+                f.cancel()
+            raise TimeoutError(
+                f"GitHub API fetch timed out after {_FETCH_TOTAL_TIMEOUT}s "
+                f"({len(not_done)} of 3 tasks still running)"
+            )
 
         commits = commits_future.result()
         pull_requests = prs_future.result()
