@@ -3,6 +3,7 @@ import json
 import re
 from datetime import datetime, timezone, timedelta
 from anthropic import Anthropic
+from src.services.reranker import rerank_news
 
 _client = None
 
@@ -281,7 +282,8 @@ def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
 
     try:
         items = json.loads(final_text.strip())
-        return _post_process_news(items)
+        post_processed = _post_process_news(items)
+        return rerank_news(org, post_processed)
     except json.JSONDecodeError:
         return []
 
