@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Schibsted_Grotesk, Work_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const schibstedGrotesk = Schibsted_Grotesk({
+  variable: "--font-schibsted-grotesk",
+  weight: ["600", "700"],
   subsets: ["latin"],
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const workSans = Work_Sans({
+  variable: "--font-work-sans",
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  weight: ["400", "500"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -27,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${schibstedGrotesk.variable} ${workSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

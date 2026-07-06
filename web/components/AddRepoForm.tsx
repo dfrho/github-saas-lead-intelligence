@@ -71,12 +71,11 @@ export function AddRepoForm({ token, onAdded }: AddRepoFormProps) {
       <Button
         type="submit"
         disabled={loading}
-        className="text-white font-medium"
-        style={{ backgroundColor: "#343ced" }}
+        className="font-display font-semibold"
       >
         {loading ? "Adding..." : "Watch Repo"}
       </Button>
-      {error && <p className="text-sm text-red-600 w-full">{error}</p>}
+      {error && <p className="text-sm text-destructive w-full">{error}</p>}
     </form>
   );
 }

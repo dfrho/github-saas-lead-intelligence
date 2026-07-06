@@ -6,9 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function scoreColor(score: number | null): string {
-  if (score === null) return "bg-gray-100 text-gray-600";
-  if (score >= 80) return "bg-red-100 text-red-700";
-  if (score >= 60) return "bg-orange-100 text-orange-700";
-  if (score >= 40) return "bg-yellow-100 text-yellow-700";
-  return "bg-gray-100 text-gray-600";
+  if (score === null) return "bg-muted text-muted-foreground";
+  if (score >= 70) return "bg-good-bg text-good";
+  if (score >= 40) return "bg-warn-bg text-warn";
+  return "bg-risk-bg text-risk";
 }

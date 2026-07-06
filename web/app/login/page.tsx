@@ -64,11 +64,11 @@ function LoginContent() {
 
   if (isNewUser) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <main className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle>Almost there</CardTitle>
-            <p className="text-sm text-gray-500">Tell us a bit about yourself</p>
+            <p className="text-sm text-muted-foreground">Tell us a bit about yourself</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleProfileSubmit} className="space-y-4">
@@ -95,7 +95,7 @@ function LoginContent() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Saving..." : "Continue →"}
               </Button>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </form>
           </CardContent>
         </Card>
@@ -104,11 +104,11 @@ function LoginContent() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <main className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Sign in to view your lead report and start watching repos.
           </p>
         </CardHeader>
@@ -127,10 +127,10 @@ function LoginContent() {
             </svg>
             {loading ? "Signing in..." : "Continue with Google"}
           </Button>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <button
             type="button"
-            className="text-xs text-gray-400 hover:underline w-full text-center"
+            className="text-xs text-muted-foreground hover:underline w-full text-center"
             onClick={() => setIsNewUser(true)}
           >
             New user? Enter your company details first

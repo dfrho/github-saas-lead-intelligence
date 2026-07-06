@@ -66,14 +66,14 @@ export default function AccountPage() {
   return (
     <>
       <NavBar />
-      <main className="min-h-screen bg-white max-w-lg mx-auto px-4 py-10 space-y-8">
-        <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}>Account</h1>
+      <main className="min-h-screen bg-background max-w-lg mx-auto px-4 py-10 space-y-8">
+        <h1 className="font-display font-bold text-2xl text-foreground">Account</h1>
 
-        <div className="border border-gray-200 rounded-xl p-6 space-y-6">
+        <div className="bg-muted rounded-2xl p-6 space-y-6">
           {/* Email — read-only */}
           <div className="space-y-1">
-            <Label style={{ color: "#484848" }}>Email</Label>
-            <p className="text-sm" style={{ color: "#484848", opacity: 0.6 }}>{email}</p>
+            <Label className="text-foreground">Email</Label>
+            <p className="text-sm text-muted-foreground">{email}</p>
           </div>
 
           {/* Editable profile fields */}
@@ -100,23 +100,20 @@ export default function AccountPage() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="text-white"
-                style={{ backgroundColor: "#343ced" }}
+                className="font-display font-semibold"
               >
                 {saving ? "Saving..." : "Save changes"}
               </Button>
-              {saved && <span className="text-sm text-green-600">Saved</span>}
-              {error && <span className="text-sm text-red-600">{error}</span>}
+              {saved && <span className="text-sm text-good">Saved</span>}
+              {error && <span className="text-sm text-destructive">{error}</span>}
             </div>
           </form>
         </div>
 
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h2 className="text-sm font-semibold mb-3" style={{ color: "#484848" }}>Sign out</h2>
+        <div className="bg-muted rounded-2xl p-6">
+          <h2 className="text-sm font-semibold mb-3 text-foreground">Sign out</h2>
           <Button
             variant="outline"
-            className="border-gray-200 hover:border-[#343ced] hover:text-[#343ced] transition-colors"
-            style={{ color: "#484848" }}
             onClick={handleSignOut}
           >
             Sign out

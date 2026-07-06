@@ -42,16 +42,13 @@ export default function LandingPage() {
   }, [reportId, router]);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="max-w-lg w-full space-y-8 text-center">
         <div>
-          <h1
-            className="text-4xl font-semibold tracking-tight"
-            style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}
-          >
+          <h1 className="font-display font-bold text-4xl tracking-tight text-foreground">
             Repolytics
           </h1>
-          <p className="mt-3 text-xs" style={{ color: "var(--text-muted)" }}>
+          <p className="mt-3 text-sm text-muted-foreground">
             Turns GitHub commit activity into purchase-intent signals for SaaS sales, BDR, and strategic GTM teams.
           </p>
         </div>
@@ -80,30 +77,29 @@ export default function LandingPage() {
             </div>
             <Button
               type="submit"
-              className="w-full text-white font-medium"
-              style={{ backgroundColor: "#343ced" }}
+              className="w-full font-display font-semibold"
               disabled={loading}
             >
               {loading ? "Starting..." : "Analyze Repository →"}
             </Button>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </form>
         ) : (
-          <div className="space-y-4 text-left bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-sm font-medium" style={{ color: "#484848" }}>
+          <div className="space-y-4 text-left bg-muted rounded-xl p-6">
+            <p className="text-sm font-medium text-foreground">
               Analyzing <span className="font-mono">{owner}/{repo}</span>
             </p>
             <ProgressIndicator reportId={reportId} onComplete={handleComplete} />
-            <p className="text-xs" style={{ color: "#484848", opacity: 0.5 }}>
+            <p className="text-xs text-muted-foreground">
               Your report will be ready in about 30–60 seconds.
               You&apos;ll need to sign in to view it — we&apos;ll take you there automatically.
             </p>
           </div>
         )}
 
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+        <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
-          <a href="/login" className="hover:underline" style={{ color: "#343ced" }}>Sign in</a>
+          <a href="/login" className="text-primary hover:underline">Sign in</a>
         </p>
       </div>
     </main>

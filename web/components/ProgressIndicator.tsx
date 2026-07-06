@@ -38,8 +38,8 @@ export function ProgressIndicator({ reportId, onComplete }: ProgressIndicatorPro
   }, [reportId, onComplete]);
 
   return (
-    <div className="flex items-center gap-3 text-sm text-gray-600">
-      <span className="inline-block w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+      <span className="inline-block w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
       <span>{status}</span>
     </div>
   );

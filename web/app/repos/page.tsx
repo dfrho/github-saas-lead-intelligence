@@ -56,8 +56,8 @@ export default function ReposPage() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Watched Repos</h1>
-        <a href="/dashboard" className="text-sm text-blue-600 hover:underline">
+        <h1 className="font-display font-bold text-2xl text-foreground">Watched Repos</h1>
+        <a href="/dashboard" className="text-sm text-primary hover:underline">
           ← Dashboard
         </a>
       </div>
@@ -78,8 +78,8 @@ export default function ReposPage() {
             {repos.map((r) => (
               <TableRow key={`${r.owner}/${r.repo}`}>
                 <TableCell className="font-mono text-sm">{r.owner}/{r.repo}</TableCell>
-                <TableCell className="text-sm text-gray-600">{r.label}</TableCell>
-                <TableCell className="text-sm text-gray-400">
+                <TableCell className="text-sm text-muted-foreground">{r.label}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">
                   {r.last_checked
                     ? new Date(r.last_checked).toLocaleDateString()
                     : "Never"}
@@ -96,7 +96,7 @@ export default function ReposPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-red-500 hover:text-red-700"
+                    className="text-destructive hover:text-destructive"
                     onClick={() => handleRemove(r.owner, r.repo)}
                   >
                     Remove
@@ -109,7 +109,7 @@ export default function ReposPage() {
       )}
 
       {repos && repos.length === 0 && (
-        <p className="text-sm text-gray-400">No repos watched yet. Add one above.</p>
+        <p className="text-sm text-muted-foreground">No repos watched yet. Add one above.</p>
       )}
     </main>
   );

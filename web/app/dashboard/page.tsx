@@ -49,16 +49,16 @@ export default function DashboardPage() {
     <NavBar />
     <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-space-grotesk)", color: "#1a1a1a" }}>Dashboard</h1>
-        <a href="/repos" className="text-sm hover:underline" style={{ color: "#343ced" }}>
+        <h1 className="font-display font-bold text-2xl text-foreground">Dashboard</h1>
+        <a href="/repos" className="text-sm text-primary hover:underline">
           Manage repos →
         </a>
       </div>
 
       {!repos || repos.length === 0 ? (
-        <div className="text-center py-20" style={{ color: "#484848", opacity: 0.5 }}>
+        <div className="text-center py-20 text-muted-foreground">
           <p className="text-lg">No repos watched yet.</p>
-          <a href="/repos" className="text-sm mt-2 inline-block hover:underline" style={{ color: "#343ced", opacity: 1 }}>
+          <a href="/repos" className="text-sm mt-2 inline-block text-primary hover:underline">
             Add your first repo →
           </a>
         </div>
