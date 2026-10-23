@@ -1,15 +1,24 @@
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED, TimeoutError as FuturesTimeoutError
 
-from github import Github, Auth
+from github import Github, Auth, GithubException
 
 _GITHUB_REQUEST_TIMEOUT = 30   # seconds per HTTP request to GitHub API
 _FETCH_TOTAL_TIMEOUT = 120     # seconds for all three parallel fetches combined
 _MAX_PRS = 200                 # page-iteration cap for pull requests
 _MAX_ISSUES = 500              # page-iteration cap for issues
+
+# GitHub's naming rules: owners are 1-39 alphanumerics/hyphens, repos 1-100 of [A-Za-z0-9._-]
+OWNER_PATTERN = r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$"
+REPO_PATTERN = r"^[A-Za-z0-9._-]{1,100}$"
+
+
+class RepoNotAccessible(Exception):
+    """The repository does not exist, is not readable, or is private."""
 
 
 @dataclass
@@ -75,6 +84,27 @@ def _get_github_client() -> Github:
     if not token:
         raise ValueError("GITHUB_TOKEN environment variable is required")
     return Github(auth=Auth.Token(token), timeout=_GITHUB_REQUEST_TIMEOUT)
+
+
+def ensure_public_repo(owner: str, repo: str) -> None:
+    """
+    Raise RepoNotAccessible unless owner/repo is a well-formed name for a public repository.
+
+    The server's GITHUB_TOKEN may be able to read private repositories; reports are
+    only ever generated for public ones so their contents can't leak to other users.
+    """
+    if (
+        not re.fullmatch(OWNER_PATTERN, owner)
+        or not re.fullmatch(REPO_PATTERN, repo)
+        or repo in (".", "..")
+    ):
+        raise RepoNotAccessible(f"{owner}/{repo} is not a valid repository name")
+    try:
+        repo_obj = _get_github_client().get_repo(f"{owner}/{repo}")
+    except GithubException as e:
+        raise RepoNotAccessible(f"{owner}/{repo} not found") from e
+    if repo_obj.private:
+        raise RepoNotAccessible(f"{owner}/{repo} not found")
 
 
 def _fetch_commits(github: Github, owner: str, repo: str, since_str: str) -> list[Commit]:

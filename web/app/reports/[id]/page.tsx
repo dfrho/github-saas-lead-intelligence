@@ -197,7 +197,9 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <div>
           <h2 className="font-display font-bold text-base mb-2 text-foreground">Synopsis</h2>
           <div className="prose prose-sm max-w-none text-sm leading-relaxed text-foreground">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{synopsis}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} disallowedElements={["img"]}>
+              {synopsis}
+            </ReactMarkdown>
           </div>
         </div>
       )}
@@ -207,7 +209,11 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <div>
           <h2 className="font-display font-bold text-base mb-4 text-foreground">Full Report</h2>
           <div className="prose prose-sm max-w-none bg-muted rounded-2xl p-6 text-foreground">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+              disallowedElements={["img"]}
+            >
               {report.markdown_body}
             </ReactMarkdown>
           </div>

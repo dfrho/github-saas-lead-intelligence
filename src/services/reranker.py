@@ -2,6 +2,8 @@ import os
 import json
 from anthropic import Anthropic
 
+from .prompt_safety import UNTRUSTED_SYSTEM, fence
+
 _client = None
 _RELEVANCE_THRESHOLD = 7  # out of 10; items scoring below this are dropped
 
@@ -36,6 +38,7 @@ def rerank_news(org: str, items: list[dict]) -> list[dict]:
         model="claude-opus-4-6",
         max_tokens=300,
         temperature=0,
+        system=UNTRUSTED_SYSTEM,
         messages=[
             {
                 "role": "user",
@@ -46,7 +49,7 @@ def rerank_news(org: str, items: list[dict]) -> list[dict]:
                     "   1 = unrelated or about a different company\n\n"
                     "Return ONLY a JSON array with no explanation:\n"
                     '[{"index": 0, "score": 8}, ...]\n\n'
-                    f"Items:\n{json.dumps(condensed, ensure_ascii=False)}"
+                    f"Items:\n{fence(json.dumps(condensed, ensure_ascii=False))}"
                 ),
             }
         ],

@@ -638,6 +638,10 @@ FRONTEND_ORIGIN=           # Your Vercel URL (for CORS)
 USE_DB=true
 PORT=8000
 REPORT_CRON=               # Optional, default: 0 2 * * 0
+REPORT_LIMIT_ANON_PER_IP_HOUR=  # Optional, default 3 anonymous report runs per IP per hour
+REPORT_LIMIT_ANON_GLOBAL_HOUR=  # Optional, default 30 anonymous runs per hour across all IPs
+REPORT_LIMIT_USER_DAY=          # Optional, default 20 runs per signed-in user per day
+REPORT_MAX_CONCURRENT=          # Optional, default 5 reports generating at once
 ```
 
 ---

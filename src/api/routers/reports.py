@@ -7,13 +7,14 @@ import csv
 import io
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 import psycopg
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -23,6 +24,7 @@ from services.vendor_map import get_vendors_for_domains
 from services.dependency_analyzer import analyze_dependencies
 from ..auth import get_current_user, get_optional_user
 from ..deps import get_db
+from ..limits import check_report_quota, report_slots
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -40,10 +42,30 @@ PROGRESS_STEPS = [
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
 
+_HOSTNAME_RE = re.compile(
+    r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$"
+)
+
+
 class RunReportRequest(BaseModel):
-    owner: str
-    repo: str
+    owner: str = Field(pattern=github_api.OWNER_PATTERN)
+    repo: str = Field(pattern=github_api.REPO_PATTERN)
     org_domain: str | None = None
+
+    @field_validator("org_domain")
+    @classmethod
+    def _validate_org_domain(cls, v: str | None) -> str | None:
+        """Accept a bare hostname (a scheme, www. or path are stripped); reject anything else.
+
+        The value is interpolated into a web-search prompt, so free text is not allowed.
+        """
+        if v is None or not v.strip():
+            return None
+        host = re.sub(r"^[a-z][a-z0-9+.-]*://", "", v.strip().lower())
+        host = host.split("/", 1)[0].removeprefix("www.")
+        if not _HOSTNAME_RE.fullmatch(host):
+            raise ValueError("org_domain must be a domain name like example.com")
+        return host
 
 
 class ScoreBreakdown(BaseModel):
@@ -130,6 +152,8 @@ def _run_report_sync(report_id: str, owner: str, repo: str, org_domain: str | No
 
     try:
         _update_status(PROGRESS_STEPS[0])
+        # Also guards scheduled runs of watched repos, which skip the route-level check
+        github_api.ensure_public_repo(owner, repo)
         activity = github_api.fetch_repo_activity(owner, repo)
 
         activity_data = {
@@ -249,11 +273,20 @@ def _run_report_sync(report_id: str, owner: str, repo: str, org_domain: str | No
             conn.commit()
 
 
+def _run_report_in_slot(*args) -> None:
+    """Run a report that holds one of the concurrency slots, freeing it when done."""
+    try:
+        _run_report_sync(*args)
+    finally:
+        report_slots.release()
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post("/run", status_code=status.HTTP_202_ACCEPTED)
 def trigger_report(
     body: RunReportRequest,
+    request: Request,
     background_tasks: BackgroundTasks,
     user_id: str | None = Depends(get_optional_user),
     conn=Depends(get_db),
@@ -261,17 +294,38 @@ def trigger_report(
     """
     Trigger a full lead report. Available to unauthenticated users (pre-auth flow).
     Returns a report_id immediately; the report is generated in the background.
+
+    Runs are rate-limited per user / per IP and capped in concurrency (see limits.py),
+    and only public repositories are accepted.
     """
-    with conn.cursor() as cur:
-        cur.execute(
-            "INSERT INTO reports (user_id, owner, repo, status) VALUES (%s, %s, %s, %s) RETURNING id",
-            (user_id, body.owner, body.repo, PROGRESS_STEPS[0]),
+    if not report_slots.try_acquire():
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many reports are running right now. Try again in a few minutes.",
         )
-        report_id = str(cur.fetchone()[0])
-    conn.commit()
+    try:
+        check_report_quota(request, user_id)
+        try:
+            github_api.ensure_public_repo(body.owner, body.repo)
+        except github_api.RepoNotAccessible:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"{body.owner}/{body.repo} was not found or is not a public repository.",
+            )
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO reports (user_id, owner, repo, status) VALUES (%s, %s, %s, %s) RETURNING id",
+                (user_id, body.owner, body.repo, PROGRESS_STEPS[0]),
+            )
+            report_id = str(cur.fetchone()[0])
+        conn.commit()
+    except BaseException:
+        report_slots.release()
+        raise
 
     background_tasks.add_task(
-        _run_report_sync, report_id, body.owner, body.repo, body.org_domain, user_id
+        _run_report_in_slot, report_id, body.owner, body.repo, body.org_domain, user_id
     )
 
     return {"report_id": report_id, "status": PROGRESS_STEPS[0]}

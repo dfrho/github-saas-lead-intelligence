@@ -3,22 +3,22 @@
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from services import registry
+from services import github_api, registry
 from ..deps import get_current_user
 
 router = APIRouter(prefix="/repos", tags=["repos"])
 
 
 class WatchRepoRequest(BaseModel):
-    owner: str
-    repo: str
-    label: str | None = None
+    owner: str = Field(pattern=github_api.OWNER_PATTERN)
+    repo: str = Field(pattern=github_api.REPO_PATTERN)
+    label: str | None = Field(default=None, max_length=200)
 
 
 class RepoResponse(BaseModel):
@@ -35,7 +35,14 @@ def watch_repo(
     body: WatchRepoRequest,
     user_id: str = Depends(get_current_user),
 ):
-    """Add a repository to the user's watched list."""
+    """Add a repository to the user's watched list. Only public repositories are accepted."""
+    try:
+        github_api.ensure_public_repo(body.owner, body.repo)
+    except github_api.RepoNotAccessible:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{body.owner}/{body.repo} was not found or is not a public repository.",
+        )
     resolved_label = body.label or f"{body.owner}/{body.repo}"
     created, entry = registry.add_watched_repo(body.owner, body.repo, resolved_label, user_id=user_id)
 

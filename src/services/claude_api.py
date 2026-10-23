@@ -4,6 +4,7 @@ import re
 from datetime import datetime, timezone, timedelta
 from anthropic import Anthropic
 from src.services.reranker import rerank_news
+from .prompt_safety import UNTRUSTED_SYSTEM, fence
 
 _client = None
 
@@ -47,6 +48,7 @@ def summarize_activity(activity_data: dict) -> str:
         model="claude-opus-4-6",
         max_tokens=500,
         temperature=0,
+        system=UNTRUSTED_SYSTEM,
         messages=[
             {
                 "role": "user",
@@ -57,7 +59,7 @@ def summarize_activity(activity_data: dict) -> str:
                     "2-3 sentence technical synopsis of what this team is actively working on. "
                     "Focus on infrastructure domains, new integrations, and architectural shifts "
                     "rather than routine feature work.\n\n"
-                    f"{activity_text}\n\n"
+                    f"{fence(activity_text)}\n\n"
                     "Write a direct, factual synopsis (2-3 sentences) that identifies the key technical themes."
                 ),
             }
@@ -104,6 +106,7 @@ def classify_signal(summary: str) -> list[dict]:
         model="claude-opus-4-6",
         max_tokens=1000,
         temperature=0,
+        system=UNTRUSTED_SYSTEM,
         messages=[
             {
                 "role": "user",
@@ -111,7 +114,7 @@ def classify_signal(summary: str) -> list[dict]:
                     "Given this summary of a software team's recent GitHub activity, identify which "
                     "SaaS/infrastructure categories they are likely to be in-market for within the "
                     "next 60-120 days.\n\n"
-                    f"Activity summary:\n{summary}\n\n"
+                    f"Activity summary:\n{fence(summary)}\n\n"
                     f"Available domain categories:\n{domains_list}\n\n"
                     "Return ONLY a JSON array (no explanation, no markdown) of objects with this structure:\n"
                     '[{"domain": "...", "confidence": "high"|"medium"|"low", "reasoning": "one sentence"}]\n\n'
@@ -233,6 +236,7 @@ def fetch_company_news(org: str, org_domain: str = None) -> list[dict]:
         model="claude-opus-4-6",
         max_tokens=4000,
         temperature=0,
+        system=UNTRUSTED_SYSTEM,
         tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=[
             {
@@ -331,6 +335,7 @@ def detect_company_own_domains(org: str, org_domain: str = None) -> list[str]:
         model="claude-opus-4-6",
         max_tokens=500,
         temperature=0,
+        system=UNTRUSTED_SYSTEM,
         tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=[
             {
@@ -403,6 +408,7 @@ def recommend_outreach_angle(
         model="claude-opus-4-6",
         max_tokens=400,
         temperature=0.3,
+        system=UNTRUSTED_SYSTEM,
         messages=[
             {
                 "role": "user",
@@ -410,9 +416,10 @@ def recommend_outreach_angle(
                     "You are a senior enterprise sales strategist. Write a 1-paragraph outreach angle "
                     "for a sales rep to use when cold-contacting this company. It should be specific, "
                     "timely, and reference concrete signals — not generic.\n\n"
-                    f"What the team is building:\n{synopsis}\n\n"
-                    f"Infrastructure signals (SaaS categories they are likely evaluating):\n{signals_text}\n\n"
-                    f"Recent company news:\n{news_text}\n\n"
+                    f"What the team is building:\n{fence(synopsis)}\n\n"
+                    "Infrastructure signals (SaaS categories they are likely evaluating):\n"
+                    f"{fence(signals_text)}\n\n"
+                    f"Recent company news:\n{fence(news_text)}\n\n"
                     "Write a single paragraph (3-5 sentences) that a sales rep could use as an email opener. "
                     "Be direct, reference the specific technical work and/or news, and connect it to a "
                     "concrete pain or inflection point. Do not start with 'I' or use filler phrases like "
