@@ -23,7 +23,7 @@ from scheduler.worker import start_scheduler, stop_scheduler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: validate required env vars are present
-    required = ["DATABASE_URL", "SUPABASE_SERVICE_KEY"]
+    required = ["DATABASE_URL", "SUPABASE_URL"]
     missing = [k for k in required if not os.environ.get(k)]
     if missing:
         raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")

@@ -414,8 +414,6 @@ Phase 5 adds a Postgres backend (Supabase) alongside the existing JSON registry.
 ```text
 DATABASE_URL=postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
 SUPABASE_URL=https://[ref].supabase.co
-SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_KEY=...
 USE_DB=true
 FRONTEND_ORIGIN=http://localhost:3000   # or your deployed frontend URL
 ```
@@ -585,7 +583,7 @@ A React frontend deployed to Vercel. All data fetching goes through the FastAPI 
 - Google OAuth via Supabase Auth
 - Registration collects work email (or Gmail), work web domain, and company name
 - Session tokens are stored in `localStorage` by the Supabase client and passed as `Authorization: Bearer` on all API calls
-- JWT validation on the backend supports both HS256 (legacy) and ES256 (Supabase default) tokens via the JWKS endpoint
+- JWT validation on the backend accepts only asymmetric (ES256/RS256) tokens, verified via the Supabase JWKS endpoint
 
 **Report viewer (`/reports/[id]`):**
 
@@ -620,7 +618,7 @@ NEXT_PUBLIC_API_URL=https://your-railway-app.railway.app
 1. Connect GitHub repo → Railway detects the `Dockerfile` automatically
 2. Set environment variables in Railway dashboard (all vars from 5a, plus `PORT=8000`)
 3. Use the Supabase **Transaction Pooler** connection URL (port `6543`, not `5432`) — Railway uses IPv4, the direct connection is IPv6-only
-4. Set `SUPABASE_SERVICE_KEY` to the **Legacy JWT Secret** from Supabase → Authentication → JWT Settings (not the `service_role` API key)
+4. In Supabase → Project Settings → JWT Keys, use the asymmetric (ES256) signing keys and revoke the Legacy JWT Secret. The backend verifies tokens via `SUPABASE_URL`'s public JWKS and needs no signing secret
 5. Add a healthcheck: path `/health`, timeout 30s
 
 **Vercel setup:**
@@ -635,9 +633,7 @@ NEXT_PUBLIC_API_URL=https://your-railway-app.railway.app
 GITHUB_TOKEN=              # GitHub PAT with repo read scope
 ANTHROPIC_API_KEY=         # For summarize, classify, news, outreach
 DATABASE_URL=              # Supabase Transaction Pooler URL (port 6543)
-SUPABASE_URL=              # https://[ref].supabase.co
-SUPABASE_ANON_KEY=         # Public key (used by frontend Supabase client)
-SUPABASE_SERVICE_KEY=      # Legacy JWT Secret (for HS256/ES256 token validation)
+SUPABASE_URL=              # https://[ref].supabase.co (JWKS for token validation)
 FRONTEND_ORIGIN=           # Your Vercel URL (for CORS)
 USE_DB=true
 PORT=8000

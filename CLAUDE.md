@@ -208,9 +208,7 @@ reports/                      ← SUPPLEMENTED — also stored in DB reports tab
 
 ```text
 DATABASE_URL=         # Postgres connection string (Supabase)
-SUPABASE_URL=         # For auth token validation
-SUPABASE_ANON_KEY=    # Public key for frontend Supabase client
-SUPABASE_SERVICE_KEY= # Server-side key for JWT verification in FastAPI
+SUPABASE_URL=         # For auth token validation (public JWKS endpoint)
 REPORT_CRON=          # Optional override, default: 0 2 * * 0
 USE_DB=true           # Switches registry from JSON file to Postgres
 ```

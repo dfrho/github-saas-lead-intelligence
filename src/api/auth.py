@@ -5,9 +5,9 @@ Every request to a protected endpoint passes through get_current_user(),
 which decodes the Bearer token and returns the user_id (UUID string from
 the 'sub' claim).
 
-Supabase may sign tokens with HS256 (Legacy JWT Secret) or ES256 (asymmetric
-JWKS). This module handles both: it inspects the token header and uses the
-appropriate key.
+Tokens are verified only against Supabase's asymmetric signing keys, fetched
+from the project's public JWKS endpoint. HS256 tokens signed with the Legacy
+JWT Secret are rejected, so the backend holds no signing secret.
 """
 
 import os
@@ -20,9 +20,7 @@ from jose import JWTError, jwt
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
-_SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_SERVICE_KEY", "")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-_ALGORITHM_HS = "HS256"
 _ALGORITHMS_ASYMMETRIC = ["RS256", "ES256"]
 
 
@@ -37,31 +35,25 @@ def _fetch_jwks() -> dict:
 
 def _decode_token(token: str) -> dict:
     """
-    Decode a Supabase JWT using the correct algorithm.
-    Checks the token header to determine HS256 vs ES256/RS256.
+    Decode a Supabase JWT against the project's JWKS public keys.
+    Only ES256/RS256 are accepted; anything else (including HS256) is rejected.
     """
     try:
         header = jwt.get_unverified_header(token)
     except JWTError as e:
         raise JWTError(f"Could not read token header: {e}") from e
 
-    alg = header.get("alg", "HS256")
+    alg = header.get("alg")
+    if alg not in _ALGORITHMS_ASYMMETRIC:
+        raise JWTError(f"Unsupported token algorithm: {alg}")
 
-    if alg == "HS256":
-        return jwt.decode(
-            token,
-            _SUPABASE_JWT_SECRET,
-            algorithms=[_ALGORITHM_HS],
-            options={"verify_aud": False},
-        )
-    else:
-        jwks = _fetch_jwks()
-        return jwt.decode(
-            token,
-            jwks,
-            algorithms=_ALGORITHMS_ASYMMETRIC,
-            options={"verify_aud": False},
-        )
+    jwks = _fetch_jwks()
+    return jwt.decode(
+        token,
+        jwks,
+        algorithms=_ALGORITHMS_ASYMMETRIC,
+        options={"verify_aud": False},
+    )
 
 
 def get_current_user(
@@ -88,7 +80,7 @@ def get_current_user(
     except (JWTError, ValueError, httpx.HTTPError) as e:
         print(
             f"[AUTH DEBUG] JWT validation failed: {type(e).__name__}: {e} | "
-            f"secret_len={len(_SUPABASE_JWT_SECRET)} | supabase_url={_SUPABASE_URL[:30] if _SUPABASE_URL else 'MISSING'}",
+            f"supabase_url={_SUPABASE_URL[:30] if _SUPABASE_URL else 'MISSING'}",
             flush=True,
         )
         raise HTTPException(
