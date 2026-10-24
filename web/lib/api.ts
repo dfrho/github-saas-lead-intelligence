@@ -90,8 +90,28 @@ export const fetchReports = (token: string) =>
 export const fetchReport = (token: string, id: string) =>
   apiFetch<ReportDetail>(`/reports/${id}`, token);
 
-export const exportReportUrl = (id: string, format: "csv" | "txt") =>
-  `${API_URL}/reports/${id}/export?format=${format}`;
+/**
+ * Download a report export. Uses fetch (not a plain link) so the request can carry
+ * the Bearer token the export endpoint requires.
+ */
+export async function downloadReport(token: string, id: string, format: "csv" | "txt") {
+  const res = await fetch(`${API_URL}/reports/${id}/export?format=${format}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Export failed (${res.status})`);
+
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `report.${format}`;
+
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 // ── Users ─────────────────────────────────────────────────────────────────
 

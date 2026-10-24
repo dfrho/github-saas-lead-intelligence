@@ -49,6 +49,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Lets the frontend read the export filename when downloading via fetch()
+    expose_headers=["Content-Disposition"],
 )
 
 app.include_router(repos.router)

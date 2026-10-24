@@ -13,10 +13,9 @@ JWT Secret are rejected, so the backend holds no signing secret.
 import os
 from functools import lru_cache
 
-import httpx
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -25,12 +24,14 @@ _ALGORITHMS_ASYMMETRIC = ["RS256", "ES256"]
 
 
 @lru_cache(maxsize=1)
-def _fetch_jwks() -> dict:
-    """Fetch and cache the Supabase JWKS public keys (called once per process)."""
-    url = f"{_SUPABASE_URL}/auth/v1/.well-known/jwks.json"
-    resp = httpx.get(url, timeout=10)
-    resp.raise_for_status()
-    return resp.json()
+def _jwks_client() -> jwt.PyJWKClient:
+    """
+    Client for the Supabase JWKS endpoint. Keys are cached and refetched when a
+    token names a key ID it hasn't seen, so signing-key rotations need no redeploy.
+    """
+    return jwt.PyJWKClient(
+        f"{_SUPABASE_URL}/auth/v1/.well-known/jwks.json", cache_keys=True, timeout=10
+    )
 
 
 def _decode_token(token: str) -> dict:
@@ -38,19 +39,16 @@ def _decode_token(token: str) -> dict:
     Decode a Supabase JWT against the project's JWKS public keys.
     Only ES256/RS256 are accepted; anything else (including HS256) is rejected.
     """
-    try:
-        header = jwt.get_unverified_header(token)
-    except JWTError as e:
-        raise JWTError(f"Could not read token header: {e}") from e
+    header = jwt.get_unverified_header(token)
 
     alg = header.get("alg")
     if alg not in _ALGORITHMS_ASYMMETRIC:
-        raise JWTError(f"Unsupported token algorithm: {alg}")
+        raise jwt.InvalidAlgorithmError(f"Unsupported token algorithm: {alg}")
 
-    jwks = _fetch_jwks()
+    signing_key = _jwks_client().get_signing_key_from_jwt(token)
     return jwt.decode(
         token,
-        jwks,
+        signing_key.key,
         algorithms=_ALGORITHMS_ASYMMETRIC,
         options={"verify_aud": False},
     )
@@ -77,7 +75,7 @@ def get_current_user(
         if not user_id:
             raise ValueError("Missing sub claim")
         return user_id
-    except (JWTError, ValueError, httpx.HTTPError) as e:
+    except (jwt.PyJWTError, ValueError) as e:
         print(
             f"[AUTH DEBUG] JWT validation failed: {type(e).__name__}: {e} | "
             f"supabase_url={_SUPABASE_URL[:30] if _SUPABASE_URL else 'MISSING'}",

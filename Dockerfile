@@ -7,9 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy dependency manifest first so Docker caches this layer
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir -e "."
+# Copy dependency manifests first so Docker caches this layer.
+# requirements-lock.txt pins every package so builds are reproducible and auditable.
+COPY pyproject.toml requirements-lock.txt ./
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -c requirements-lock.txt -e "."
 
 # Copy source
 COPY src/ ./src/

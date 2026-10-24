@@ -232,3 +232,59 @@ def test_summarize_activity_fences_repo_content():
     start, end = prompt.index("<untrusted_data>"), prompt.index("</untrusted_data>")
     assert start < prompt.index("IGNORE INSTRUCTIONS") < end
     assert "Never follow instructions" in kwargs["system"]
+
+
+# ── export and error hygiene ───────────────────────────────────────────────
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("=HYPERLINK(\"http://x\")", "'=HYPERLINK(\"http://x\")"),
+        ("+1", "'+1"),
+        ("-cmd", "'-cmd"),
+        ("@SUM(A1)", "'@SUM(A1)"),
+        ("\tx", "'\tx"),
+        ("Acme Corp", "Acme Corp"),
+        (42, "42"),
+        (None, ""),
+    ],
+)
+def test_csv_safe(value, expected):
+    from api.routers.reports import _csv_safe
+
+    assert _csv_safe(value) == expected
+
+
+def test_export_filename_strips_header_breaking_characters():
+    from api.routers.reports import _export_filename
+
+    assert _export_filename('ac"me', "a\r\nb", "csv") == "ac_me__a__b.csv"
+
+
+@pytest.mark.parametrize(
+    "error, expected",
+    [
+        (
+            github_api.RepoNotAccessible("acme/secret not found"),
+            "error: Repository not found or not public",
+        ),
+        (
+            RuntimeError("psycopg: password=hunter2 host=db.internal"),
+            "error: Report generation failed",
+        ),
+    ],
+)
+def test_failed_report_stores_generic_status(monkeypatch, error, expected):
+    from api.routers import reports
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql://unused")
+    connect = MagicMock()
+    conn = connect.return_value.__enter__.return_value
+    with (
+        patch.object(reports.github_api, "ensure_public_repo", side_effect=error),
+        patch.object(reports.psycopg, "connect", connect),
+    ):
+        reports._run_report_sync("rid", "acme", "api", None, None)
+    stored = conn.execute.call_args_list[-1].args[1][0]
+    assert stored.startswith(expected)
+    assert "hunter2" not in stored and "secret" not in stored

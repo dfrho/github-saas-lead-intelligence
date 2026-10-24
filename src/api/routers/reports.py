@@ -6,6 +6,7 @@ import asyncio
 import csv
 import io
 import json
+import logging
 import os
 import re
 from datetime import datetime, timezone
@@ -27,6 +28,7 @@ from ..deps import get_db
 from ..limits import check_report_quota, report_slots
 
 router = APIRouter(prefix="/reports", tags=["reports"])
+logger = logging.getLogger(__name__)
 
 # Progress status messages shown to the client while a report generates
 PROGRESS_STEPS = [
@@ -265,10 +267,16 @@ def _run_report_sync(report_id: str, owner: str, repo: str, org_domain: str | No
             )
 
     except Exception as e:
+        # The status endpoint is public, so store a generic message and keep details in logs
+        logger.exception("Report %s for %s/%s failed", report_id, owner, repo)
+        if isinstance(e, github_api.RepoNotAccessible):
+            public_error = "error: Repository not found or not public"
+        else:
+            public_error = "error: Report generation failed. Please try again later."
         with psycopg.connect(db_url) as conn:
             conn.execute(
                 "UPDATE reports SET status = %s WHERE id = %s",
-                (f"error: {str(e)[:200]}", report_id),
+                (public_error, report_id),
             )
             conn.commit()
 
@@ -279,6 +287,21 @@ def _run_report_in_slot(*args) -> None:
         _run_report_sync(*args)
     finally:
         report_slots.release()
+
+
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_safe(value) -> str:
+    """Neutralize spreadsheet formulas: GitHub profile fields and model output are untrusted."""
+    text = "" if value is None else str(value)
+    return "'" + text if text.startswith(_CSV_FORMULA_PREFIXES) else text
+
+
+def _export_filename(owner: str, repo: str, ext: str) -> str:
+    """Build a Content-Disposition-safe filename from owner/repo."""
+    stem = re.sub(r"[^A-Za-z0-9._-]", "_", f"{owner}__{repo}")[:200]
+    return f"{stem}.{ext}"
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -466,29 +489,36 @@ def export_report(
         return StreamingResponse(
             io.StringIO(content),
             media_type="text/plain",
-            headers={"Content-Disposition": f'attachment; filename="{owner}__{repo}.txt"'},
+            headers={
+                "Content-Disposition": f'attachment; filename="{_export_filename(owner, repo, "txt")}"'
+            },
         )
 
     # CSV: one row per contributor, plus a summary header block
     output = io.StringIO()
     writer = csv.writer(output)
 
-    writer.writerow(["Lead Report", f"{owner}/{repo}"])
-    writer.writerow(["Score", data.get("lead_score", ""), "Label", data.get("lead_label", "")])
-    writer.writerow(["Synopsis", data.get("synopsis", "")])
-    writer.writerow(["Outreach Angle", data.get("recommended_angle", "")])
-    writer.writerow([])
-    writer.writerow(["Contributors"])
-    writer.writerow(["Login", "Name", "Company", "Contributions", "Orgs"])
+    def row(*cells):
+        writer.writerow([_csv_safe(c) for c in cells])
+
+    row("Lead Report", f"{owner}/{repo}")
+    row("Score", data.get("lead_score", ""), "Label", data.get("lead_label", ""))
+    row("Synopsis", data.get("synopsis", ""))
+    row("Outreach Angle", data.get("recommended_angle", ""))
+    row()
+    row("Contributors")
+    row("Login", "Name", "Company", "Contributions", "Orgs")
     for c in data.get("enrichment", {}).get("top_contributors", []):
-        writer.writerow([
+        row(
             c.get("login", ""), c.get("name", ""), c.get("company", ""),
-            c.get("contributions", ""), ", ".join(c.get("orgs", [])),
-        ])
+            c.get("contributions", ""), ", ".join(c.get("orgs") or []),
+        )
 
     output.seek(0)
     return StreamingResponse(
         output,
         media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="{owner}__{repo}.csv"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{_export_filename(owner, repo, "csv")}"'
+        },
     )

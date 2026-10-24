@@ -1,5 +1,5 @@
 import { render, screen, act } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 
 vi.mock("@/lib/api", () => ({

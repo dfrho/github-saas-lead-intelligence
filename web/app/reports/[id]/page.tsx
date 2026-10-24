@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { createClient } from "@/lib/supabase";
-import { fetchReport, fetchReportStatus, exportReportUrl } from "@/lib/api";
+import { fetchReport, fetchReportStatus, downloadReport } from "@/lib/api";
 import { ScoreBar } from "@/components/ScoreBar";
 import { Button } from "@/components/ui/button";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
@@ -20,6 +20,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const [token, setToken] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -46,6 +47,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     token && !isGenerating ? ["report", token, id] : null,
     ([, t, rid]) => fetchReport(t, rid)
   );
+
+  async function handleExport(format: "csv" | "txt") {
+    if (!token) return;
+    setExportError(null);
+    try {
+      await downloadReport(token, id, format);
+    } catch (err: unknown) {
+      setExportError(err instanceof Error ? err.message : "Export failed");
+    }
+  }
 
   function handleComplete() {
     setIsGenerating(false);
@@ -84,14 +95,15 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     <>
     <NavBar />
     <main className="min-h-screen bg-background max-w-3xl mx-auto px-4 py-10 space-y-8">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {exportError && <p className="text-sm text-destructive">{exportError}</p>}
         <div className="flex gap-2">
-          <a href={exportReportUrl(id, "csv")} download>
-            <Button size="sm" variant="outline">Export CSV</Button>
-          </a>
-          <a href={exportReportUrl(id, "txt")} download>
-            <Button size="sm" variant="outline">Export TXT</Button>
-          </a>
+          <Button size="sm" variant="outline" onClick={() => handleExport("csv")}>
+            Export CSV
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => handleExport("txt")}>
+            Export TXT
+          </Button>
         </div>
       </div>
 
