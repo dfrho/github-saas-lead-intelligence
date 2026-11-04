@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import ReactMarkdown from "react-markdown";
@@ -82,6 +83,33 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       <main className="max-w-3xl mx-auto px-4 py-10">
         <p className="text-muted-foreground text-sm">Loading report...</p>
       </main>
+    );
+  }
+
+  if (report.status !== "complete") {
+    const failed = report.status.startsWith("error");
+    const reason = failed ? report.status.replace(/^error:\s*/, "") : report.status;
+    return (
+      <>
+      <NavBar />
+      <main className="min-h-screen bg-background max-w-3xl mx-auto px-4 py-10">
+        <div className="bg-muted rounded-2xl p-8 space-y-4">
+          <p className="font-display font-bold text-lg text-foreground">{report.owner}/{report.repo}</p>
+          <h1 className="font-display font-bold text-xl text-foreground">
+            {failed ? "This report couldn't be generated" : "This report isn't finished"}
+          </h1>
+          <p className="text-sm text-muted-foreground">{reason}</p>
+          <div className="flex gap-3">
+            <Button asChild size="sm">
+              <Link href="/">Run a new report</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/dashboard">Back to dashboard</Link>
+            </Button>
+          </div>
+        </div>
+      </main>
+      </>
     );
   }
 
