@@ -49,7 +49,7 @@ export default function LandingPage() {
             Repolytics
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Turns GitHub commit activity into purchase-intent signals for SaaS sales, BDR, and strategic GTM teams.
+            Turns GitHub commit activity into purchase-intent signals for SaaS GTM teams.
           </p>
         </div>
 
