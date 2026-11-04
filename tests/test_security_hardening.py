@@ -292,9 +292,17 @@ def test_failed_report_stores_generic_status(monkeypatch, error, expected):
 
 # ── malformed IDs, profile limits, API docs ───────────────────────────────
 
-@pytest.mark.parametrize("path", ["/reports/status/not-a-uuid", "/reports/1'--"])
-def test_malformed_report_id_rejected_before_db(client, path):
-    assert client.get(path).status_code == 422
+@pytest.mark.parametrize("bad_id", ["not-a-uuid", "1'--"])
+def test_malformed_report_id_rejected_before_db(client, bad_id):
+    # Public status endpoint
+    assert client.get(f"/reports/status/{bad_id}").status_code == 422
+
+    # Authenticated detail and export endpoints (unauthenticated callers get 401 first)
+    from api.auth import get_current_user
+
+    app.dependency_overrides[get_current_user] = lambda: "user-1"
+    assert client.get(f"/reports/{bad_id}").status_code == 422
+    assert client.get(f"/reports/{bad_id}/export").status_code == 422
 
 
 def test_profile_fields_length_limited():
