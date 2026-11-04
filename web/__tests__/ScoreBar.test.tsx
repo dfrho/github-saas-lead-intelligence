@@ -14,29 +14,16 @@ describe("ScoreBar", () => {
     expect(screen.getByText("15% · —/100")).toBeInTheDocument();
   });
 
-  it("applies blue fill for score >= 80", () => {
-    render(<ScoreBar label="X" score={80} weight="25%" />);
-    const bar = screen.getByTestId("score-bar-fill");
-    expect(bar).toBeInTheDocument();
-    expect(bar).toHaveStyle({ width: "80%", backgroundColor: "#343ced" });
+  it.each([80, 65, 50, 20])("sizes the fill to the score (%i)", (score) => {
+    render(<ScoreBar label="X" score={score} weight="25%" />);
+    expect(screen.getByTestId("score-bar-fill")).toHaveStyle({ width: `${score}%` });
   });
 
-  it("applies lime fill for score 60–79", () => {
-    render(<ScoreBar label="X" score={65} weight="25%" />);
-    const bar = screen.getByTestId("score-bar-fill");
-    expect(bar).toHaveStyle({ backgroundColor: "#d8fd49" });
-  });
-
-  it("applies amber fill for score 40–59", () => {
-    render(<ScoreBar label="X" score={50} weight="25%" />);
-    const bar = screen.getByTestId("score-bar-fill");
-    expect(bar).toHaveStyle({ backgroundColor: "#f59e0b" });
-  });
-
-  it("applies gray fill for score < 40", () => {
-    render(<ScoreBar label="X" score={20} weight="25%" />);
-    const bar = screen.getByTestId("score-bar-fill");
-    expect(bar).toHaveStyle({ backgroundColor: "#d1d5db" });
+  it("uses the brand fill color at every score", () => {
+    const { rerender } = render(<ScoreBar label="X" score={90} weight="25%" />);
+    expect(screen.getByTestId("score-bar-fill")).toHaveClass("bg-gold");
+    rerender(<ScoreBar label="X" score={10} weight="25%" />);
+    expect(screen.getByTestId("score-bar-fill")).toHaveClass("bg-gold");
   });
 
   it("renders a zero-width bar when score is null", () => {
