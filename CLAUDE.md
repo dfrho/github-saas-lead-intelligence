@@ -281,7 +281,7 @@ Launch content in parallel with pricing to drive inbound during the monetization
 ## Environment Variables Required
 
 ```text
-GITHUB_TOKEN=        # Personal access token with repo read scope
+GITHUB_TOKEN=        # Fine-grained PAT, public repositories read-only
 ANTHROPIC_API_KEY=   # For summarize, classify, news, and recommend tools
 ```
 
@@ -291,3 +291,15 @@ ANTHROPIC_API_KEY=   # For summarize, classify, news, and recommend tools
 - Registry entries include: `{ owner, repo, label, added_at, last_checked, last_activity_hash }`
 - Reports are written to `reports/{owner}__{repo}__{YYYY-MM-DD}.md`
 - Use `last_activity_hash` (SHA of most recent commit) to skip repos with no new activity
+
+## Security Conventions
+
+See the **Security** section of README.md for the OWASP Top 10 mapping. When changing code:
+
+- Call `github_api.ensure_public_repo()` before analyzing any repository; never report on private repos
+- Wrap any repo content, profile data, web results or model output in `fence()` (`src/services/prompt_safety.py`) and pass `system=UNTRUSTED_SYSTEM` on every Claude call
+- Keep new paid or expensive endpoints behind the limits in `src/api/limits.py`
+- Accept only ES256/RS256 JWTs; never reintroduce a shared JWT secret
+- Store only generic error text where unauthenticated users can read it; log details server-side
+- Use parameterized SQL only; escape spreadsheet-formula prefixes in CSV exports
+- Add Python dependencies to `pyproject.toml` and regenerate `requirements-lock.txt`

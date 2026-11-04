@@ -47,9 +47,9 @@ run_full_analysis(owner, repo)
 
 ### 1. Get a GitHub Token
 
-Generate a personal access token at https://github.com/settings/tokens:
-- Click "Generate new token (classic)"
-- Select scope: **`repo`** (read access to repositories)
+Generate a fine-grained personal access token at https://github.com/settings/personal-access-tokens:
+- Click "Generate new token"
+- Repository access: **Public repositories (read-only)**. The app only analyzes public repos, and a token that can't read private ones can't leak them.
 - Copy the token (you won't see it again)
 
 ### 2. Set Up Python Environment
@@ -630,7 +630,7 @@ NEXT_PUBLIC_API_URL=https://your-railway-app.railway.app
 **All backend environment variables:**
 
 ```text
-GITHUB_TOKEN=              # GitHub PAT with repo read scope
+GITHUB_TOKEN=              # Fine-grained PAT, public repositories read-only
 ANTHROPIC_API_KEY=         # For summarize, classify, news, outreach
 DATABASE_URL=              # Supabase Transaction Pooler URL (port 6543)
 SUPABASE_URL=              # https://[ref].supabase.co (JWKS for token validation)
@@ -680,9 +680,28 @@ Claude-generated content is validated and filtered at multiple points in the pip
 
 **Cross-encoder re-ranking** — After `fetch_company_news` retrieves and post-processes news items, a second Claude pass (`src/services/reranker.py` — the re-ranking service) scores each item 1–10 for relevance to the target org. Items scoring below 7 are hard-dropped before any results reach the LLM. This two-pass approach catches items that pass date and deduplication filters but are not actually about the target company.
 
+## Security
+
+The table below maps each category of the [OWASP Top 10:2025](https://owasp.org/Top10/) to the gaps a security review found in this project and how each was fixed. LLM- and API-specific risks (prompt injection, unbounded consumption) are listed under the OWASP category they fall into.
+
+| OWASP Top 10:2025 security gap | Remediation |
+|---|---|
+| **A01 Broken Access Control** — Anyone could run a report on a repository the server's GitHub token can read, including private repos, and see summaries of their commits, issues and dependencies. The post-login `next` redirect accepted values like `@evil.example`, sending users to another site after Google sign-in. The Supabase Data API exposed the app's tables to anyone holding the public key. | Reports, watched repos and scheduled runs only accept **public** repositories (`ensure_public_repo` in `github_api.py`); private repos get the same "not found" response as missing ones. `safeNext()` (`web/lib/safeNext.ts`) restricts redirects to same-origin paths. The Data API is disabled and row-level security policies limit each table to its owner. Report and watch-list reads are scoped to the signed-in user; progress polling uses random, unguessable report IDs. |
+| **A02 Security Misconfiguration** — The frontend sent no security headers, so pages could be framed (clickjacking) and had no Content-Security-Policy. | `web/next.config.ts` sets `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, and a Content-Security-Policy (currently report-only, to be enforced once no violations are seen). CORS allows only the frontend origin and exposes only `Content-Disposition`. |
+| **A03 Software Supply Chain Failures** — Dependencies had known vulnerabilities (1 critical and 5 high in npm, including Next.js itself; a token-forgery CVE in `python-jose` with no fixed release). Python dependencies were unpinned, so each build could pull different, unaudited versions. | Upgraded Next.js to 16.4.3 (`npm audit`: 0 vulnerabilities). Replaced `python-jose` and its vulnerable `ecdsa` dependency with PyJWT. All Python packages are pinned in `requirements-lock.txt` (`pip-audit`: clean) and the Docker build installs from it. Dependabot opens weekly update PRs for pip and npm. |
+| **A04 Cryptographic Failures** — The backend verified login tokens with Supabase's shared HS256 secret, stored in the hosting provider's environment. Anyone who obtained it could sign a valid token for any user. | The backend accepts only asymmetric (ES256/RS256) tokens verified against Supabase's public JWKS, so it holds no signing secret. The legacy HS256 secret was revoked, the legacy `anon`/`service_role` keys were disabled, and the frontend uses the new publishable key. All credentials in the hosting environment (database password, Anthropic and GitHub tokens) were rotated in October 2026 after a hosting-provider security disclosure. |
+| **A05 Injection** — Commit messages, PR/issue titles, contributor profiles and web search results (all attacker-controllable) went straight into Claude prompts, and the free-text `org_domain` field steered a web search. Contributor names went unescaped into CSV exports (spreadsheet formula injection). | Untrusted content is wrapped in `<untrusted_data>` tags with a system prompt telling Claude to treat it as data only (`src/services/prompt_safety.py`); smuggled tags are stripped. `org_domain` must be a bare hostname. Model output is rendered without raw HTML or images. CSV cells starting with `= + - @` are prefixed with `'`. All SQL is parameterized. |
+| **A06 Insecure Design** — The anonymous `POST /reports/run` endpoint triggered six Claude Opus calls (two with web search) per request with no limit, so anyone could run up API costs, exhaust the GitHub rate limit, or exhaust database connections. | Report runs are rate-limited (3/hour per anonymous IP, 30/hour across all anonymous callers, 20/day per user) and capped at 5 concurrent runs (`src/api/limits.py`). Limits are configurable through `REPORT_LIMIT_*` and `REPORT_MAX_CONCURRENT`. |
+| **A07 Authentication Failures** — Token verification chose its algorithm from the token's own header, so HS256 tokens were accepted, and the JWT library was open to algorithm-confusion forgery. | Tokens are checked against an algorithm allowlist (ES256/RS256) before any key lookup; `none`, HS256 and HMAC-with-public-key tokens are rejected. Expired tokens and tokens without a `sub` claim are rejected. `tests/test_auth.py` covers each forged-token case. Signing keys are fetched by key ID, so Supabase key rotations take effect without a redeploy. |
+| **A08 Software or Data Integrity Failures** — `owner`, `repo` and other request fields flowed unvalidated into GitHub API paths and HTTP response headers, and builds were not reproducible. | `owner` and `repo` must match GitHub's naming rules, watch-list labels are length-limited, and export filenames are sanitized. Pinned dependencies make backend builds reproducible. |
+| **A09 Security Logging and Alerting Failures** — Report failures were written only to the database, with no server-side record. | Failed reports are logged with full tracebacks via `logger.exception`, and authentication failures are logged, both visible in the Railway logs. *Not yet in place:* alerting on spikes in 401s or 429s. |
+| **A10 Mishandling of Exceptional Conditions** — The public `/reports/status/{id}` endpoint returned raw exception text, which could reveal internal details. Exports always failed with 401 because plain links could not send the login token. | Failed reports store only a generic status ("Report generation failed" or "Repository not found or not public"). If the JWKS endpoint can't be reached, authentication fails closed with a 401. Exports download through an authenticated `fetch` and show an error message if they fail. |
+
+**Open items:** enforce the Content-Security-Policy after the report-only period; move rate-limit state to a shared store (such as Redis) if the backend runs on more than one instance; add alerting on authentication and rate-limit anomalies.
+
 ## Environment Variables
 
-- **`GITHUB_TOKEN`** (required) — GitHub personal access token with `repo` scope
+- **`GITHUB_TOKEN`** (required) — Fine-grained GitHub personal access token with read-only access to public repositories
 - **`ANTHROPIC_API_KEY`** (required for Phase 2+) — For summarization, classification, news search, and outreach angle
 
 ## Implementation Details
