@@ -288,3 +288,24 @@ def test_failed_report_stores_generic_status(monkeypatch, error, expected):
     stored = conn.execute.call_args_list[-1].args[1][0]
     assert stored.startswith(expected)
     assert "hunter2" not in stored and "secret" not in stored
+
+
+# ── malformed IDs, profile limits, API docs ───────────────────────────────
+
+@pytest.mark.parametrize("path", ["/reports/status/not-a-uuid", "/reports/1'--"])
+def test_malformed_report_id_rejected_before_db(client, path):
+    assert client.get(path).status_code == 422
+
+
+def test_profile_fields_length_limited():
+    from api.routers.users import UserProfileRequest
+
+    with pytest.raises(ValidationError):
+        UserProfileRequest(company_name="x" * 201)
+    with pytest.raises(ValidationError):
+        UserProfileRequest(work_domain="x" * 254)
+
+
+def test_api_docs_disabled_by_default(client):
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 404

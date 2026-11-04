@@ -16,6 +16,10 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy source
 COPY src/ ./src/
 
+# Run as an unprivileged user so a compromised process can't modify the image or install tools
+RUN useradd --system --uid 10001 --no-create-home app
+USER app
+
 # Railway injects $PORT — default to 8000 for local use
 EXPOSE 8000
 

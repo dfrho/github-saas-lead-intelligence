@@ -37,7 +37,13 @@ def _call(token: str):
 
 
 def _claims(**extra):
-    return {"sub": "user-1", "exp": int(time.time()) + 300, **extra}
+    return {
+        "sub": "user-1",
+        "exp": int(time.time()) + 300,
+        "iss": auth._ISSUER,
+        "aud": auth._AUDIENCE,
+        **extra,
+    }
 
 
 def test_valid_es256_token_returns_user_id():
@@ -56,7 +62,10 @@ def test_expired_token_rejected():
 
 
 def test_token_without_sub_rejected():
-    token = jwt.encode({"exp": int(time.time()) + 300}, _KEY, algorithm="ES256")
+    token = jwt.encode(
+        {"exp": int(time.time()) + 300, "iss": auth._ISSUER, "aud": auth._AUDIENCE},
+        _KEY, algorithm="ES256",
+    )
     with pytest.raises(HTTPException):
         _call(token)
 
@@ -103,3 +112,32 @@ def test_jwks_fetch_failure_returns_401(jwks):
 def test_optional_user_returns_none_for_bad_token():
     creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="garbage")
     assert auth.get_optional_user(creds) is None
+
+
+def test_token_from_another_issuer_rejected():
+    with pytest.raises(HTTPException):
+        _call(jwt.encode(_claims(iss="https://other.supabase.co/auth/v1"), _KEY, algorithm="ES256"))
+
+
+def test_token_for_another_audience_rejected():
+    with pytest.raises(HTTPException):
+        _call(jwt.encode(_claims(aud="anon"), _KEY, algorithm="ES256"))
+
+
+def test_token_without_exp_rejected():
+    claims = _claims()
+    del claims["exp"]
+    with pytest.raises(HTTPException):
+        _call(jwt.encode(claims, _KEY, algorithm="ES256"))
+
+
+def test_failed_validation_log_escapes_newlines(caplog):
+    """The alg header is client-controlled; a newline in it must not forge a log line."""
+    def b64(obj):
+        return base64.urlsafe_b64encode(json.dumps(obj).encode()).rstrip(b"=").decode()
+
+    forged = f"{b64({'alg': 'HS256' + chr(10) + 'FAKE LOG LINE', 'typ': 'JWT'})}.{b64(_claims())}.sig"
+    with caplog.at_level("WARNING", logger=auth.logger.name), pytest.raises(HTTPException):
+        _call(forged)
+    assert caplog.records
+    assert all(chr(10) not in r.getMessage() for r in caplog.records)

@@ -697,6 +697,8 @@ The table below maps each category of the [OWASP Top 10:2025](https://owasp.org/
 | **A09 Security Logging and Alerting Failures** — Report failures were written only to the database, with no server-side record. | Failed reports are logged with full tracebacks via `logger.exception`, and authentication failures are logged, both visible in the Railway logs. *Not yet in place:* alerting on spikes in 401s or 429s. |
 | **A10 Mishandling of Exceptional Conditions** — The public `/reports/status/{id}` endpoint returned raw exception text, which could reveal internal details. Exports always failed with 401 because plain links could not send the login token. | Failed reports store only a generic status ("Report generation failed" or "Repository not found or not public"). If the JWKS endpoint can't be reached, authentication fails closed with a 401. Exports download through an authenticated `fetch` and show an error message if they fail. |
 
+A follow-up audit in November 2026 found and fixed seven lower-severity hardening gaps (JWT issuer/audience checks, log injection, root container, exposed API docs, malformed-ID errors, unbounded profile fields, unpinned CI actions); see [docs/security-audit-2026-11.md](docs/security-audit-2026-11.md).
+
 **Open items:** enforce the Content-Security-Policy after the report-only period; move rate-limit state to a shared store (such as Redis) if the backend runs on more than one instance; add alerting on authentication and rate-limit anomalies.
 
 ## Environment Variables
