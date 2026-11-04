@@ -317,3 +317,25 @@ def test_profile_fields_length_limited():
 def test_api_docs_disabled_by_default(client):
     for path in ("/docs", "/redoc", "/openapi.json"):
         assert client.get(path).status_code == 404
+
+
+# ── Claude API version 2026-10-21 ──────────────────────────────────────────
+
+def test_no_sampling_parameters_sent_to_claude():
+    """anthropic>=2.0 sends API version 2026-10-21, which rejects temperature/top_p/top_k with a 400."""
+    import ast
+
+    banned = {"temperature", "top_p", "top_k"}
+    offenders = []
+    src = Path(__file__).parent.parent / "src"
+    for path in src.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in {"create", "stream", "count_tokens"}
+            ):
+                for kw in node.keywords:
+                    if kw.arg in banned:
+                        offenders.append(f"{path.relative_to(src)}:{node.lineno} {kw.arg}")
+    assert not offenders, offenders
