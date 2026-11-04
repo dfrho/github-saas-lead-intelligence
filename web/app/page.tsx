@@ -202,7 +202,7 @@ function HowItWorks() {
           Who it&apos;s for
         </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          SaaS sales, BDR and go-to-market teams selling to engineering organizations. Repolytics
+          SaaS GTM teams selling to engineering organizations. Repolytics
           only reads public repositories and public profile data, and it&apos;s free while we
           collect feedback.
         </p>
