@@ -4,7 +4,7 @@ Profiles are created on first login and updated as needed.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..auth import get_current_user
 from ..deps import get_db
@@ -13,8 +13,8 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 class UserProfileRequest(BaseModel):
-    company_name: str | None = None
-    work_domain: str | None = None
+    company_name: str | None = Field(default=None, max_length=200)
+    work_domain: str | None = Field(default=None, max_length=253)
 
 
 class UserProfileResponse(BaseModel):

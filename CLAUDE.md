@@ -299,7 +299,8 @@ See the **Security** section of README.md for the OWASP Top 10 mapping. When cha
 - Call `github_api.ensure_public_repo()` before analyzing any repository; never report on private repos
 - Wrap any repo content, profile data, web results or model output in `fence()` (`src/services/prompt_safety.py`) and pass `system=UNTRUSTED_SYSTEM` on every Claude call
 - Keep new paid or expensive endpoints behind the limits in `src/api/limits.py`
-- Accept only ES256/RS256 JWTs; never reintroduce a shared JWT secret
+- Accept only ES256/RS256 JWTs, and check their issuer and audience; never reintroduce a shared JWT secret
 - Store only generic error text where unauthenticated users can read it; log details server-side
 - Use parameterized SQL only; escape spreadsheet-formula prefixes in CSV exports
 - Add Python dependencies to `pyproject.toml` and regenerate `requirements-lock.txt`
+- Pin GitHub Actions to a full commit SHA (with the version in a comment), never a tag

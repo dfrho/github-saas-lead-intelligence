@@ -33,11 +33,17 @@ async def lifespan(app: FastAPI):
     stop_scheduler()
 
 
+# Interactive docs and the OpenAPI schema map every endpoint; serve them only when asked
+_docs_enabled = os.environ.get("ENABLE_API_DOCS", "").lower() in ("1", "true", "yes")
+
 app = FastAPI(
     title="GitHub Lead Intelligence API",
     description="Convert GitHub engineering activity into structured B2B sales leads.",
     version="0.1.0",
     lifespan=lifespan,
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
 )
 
 # CORS — allow the Next.js frontend origin (configure via env in production)

@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import re
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -355,7 +356,7 @@ def trigger_report(
 
 
 @router.get("/status/{report_id}")
-def get_report_status(report_id: str, conn=Depends(get_db)):
+def get_report_status(report_id: uuid.UUID, conn=Depends(get_db)):
     """
     Poll the status of an in-progress report.
     Returns the current status string (one of PROGRESS_STEPS, 'complete', or 'error: ...').
@@ -396,7 +397,7 @@ def list_reports(user_id: str = Depends(get_current_user), conn=Depends(get_db))
 
 @router.get("/{report_id}", response_model=ReportDetail)
 def get_report(
-    report_id: str,
+    report_id: uuid.UUID,
     user_id: str = Depends(get_current_user),
     conn=Depends(get_db),
 ):
@@ -465,7 +466,7 @@ def get_report(
 
 @router.get("/{report_id}/export")
 def export_report(
-    report_id: str,
+    report_id: uuid.UUID,
     format: str = Query(default="csv", pattern="^(csv|txt)$"),
     user_id: str = Depends(get_current_user),
     conn=Depends(get_db),
