@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  /* Field Notes — slate/ivory ground, requested swatches: #4A4A4A #CBCBCB #FFFFE3 #6D8196 */
-  --background: #fffee3;
-  --foreground: #4a4a4a;
+  /* High-contrast slate: cool off-white ground, near-black ink, deep slate primary */
+  --background: #f5f7fa;
+  --foreground: #12161c;
 
   --card: #ffffff;
-  --card-foreground: #4a4a4a;
+  --card-foreground: #12161c;
 
   --popover: #ffffff;
-  --popover-foreground: #4a4a4a;
+  --popover-foreground: #12161c;
 
-  --primary: #6d8196;
+  --primary: #2e4257;
   --primary-foreground: #ffffff;
 
-  --secondary: #cbcbcb;
-  --secondary-foreground: #4a4a4a;
+  --secondary: #e4e8ee;
+  --secondary-foreground: #12161c;
 
-  --muted: #cbcbcb;
-  --muted-foreground: #6a6a6a;
+  --muted: #e4e8ee;
+  --muted-foreground: #46505c;
 
-  --accent: #cbcbcb;
-  --accent-foreground: #4a4a4a;
+  --accent: #e4e8ee;
+  --accent-foreground: #12161c;
 
   --destructive: #a8433a;
   --destructive-foreground: #ffffff;
 
-  --border: rgba(74, 74, 74, 0.18);
-  --input: rgba(74, 74, 74, 0.24);
-  --ring: #6d8196;
+  --border: rgba(18, 22, 28, 0.16);
+  --input: rgba(18, 22, 28, 0.28);
+  --ring: #2e4257;
 
   /* Brand accent reserved for scores/highlights — distinct from shadcn's structural --accent */
-  --gold: #6d8196;
+  --gold: #2e4257;
   --gold-foreground: #ffffff;
 
   --good: #3f7a4f;
