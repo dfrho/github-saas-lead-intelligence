@@ -35,12 +35,15 @@ jobs:
             exit 1
           fi
           # Publishable keys go in the apikey header only (they are not JWTs).
+          # Accept-Profile pins the schema, so the request still works when
+          # public is not the first entry in the Data API's exposed schemas.
           # RLS returns an empty list to the anon role, but the query still
           # executes in Postgres, which is what counts as project activity.
           status=$(curl --silent --show-error --output /dev/null \
             --write-out "%{http_code}" \
             --retry 3 --retry-delay 10 --retry-all-errors \
             --header "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            --header "Accept-Profile: public" \
             "${SUPABASE_URL%/}/rest/v1/watched_repos?select=id&limit=1")
           echo "Supabase responded with HTTP ${status}"
           if [ "${status}" != "200" ]; then
