@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase";
 import { fetchRepos, fetchReports } from "@/lib/api";
 import { RepoCard } from "@/components/RepoCard";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { RepoCardSkeleton, StatSkeleton } from "@/components/DashboardSkeleton";
 import type { ReportSummary } from "@/lib/api";
 
 export default function DashboardPage() {
@@ -24,17 +25,22 @@ export default function DashboardPage() {
     });
   }, [router]);
 
-  const { data: repos } = useSWR(
+  const { data: repos, error: reposError } = useSWR(
     token ? ["repos", token] : null,
     ([, t]) => fetchRepos(t)
   );
 
-  const { data: reports } = useSWR(
+  const { data: reports, error: reportsError } = useSWR(
     token ? ["reports", token] : null,
     ([, t]) => fetchReports(t)
   );
 
-  if (!token) return null;
+  // Until the session and both lists have arrived, show placeholders
+  // instead of counts of 0 and the empty state, which would be wrong.
+  const loading =
+    !token ||
+    (repos === undefined && !reposError) ||
+    (reports === undefined && !reportsError);
 
   // Group all reports by repo, sorted newest-first (API already returns desc)
   const reportsByRepo: Record<string, ReportSummary[]> = {};
@@ -69,16 +75,31 @@ export default function DashboardPage() {
           }
         />
 
-        <dl className="grid grid-cols-3 gap-2 sm:gap-3">
+        <dl aria-busy={loading} className="grid grid-cols-3 gap-2 sm:gap-3">
           {stats.map((s) => (
             <div key={s.label} className="rounded-lg border border-border bg-card p-3 sm:p-4">
               <dt className="text-xs text-muted-foreground">{s.label}</dt>
-              <dd className="mt-1 font-mono text-xl font-medium sm:text-2xl tabular-nums text-foreground">{s.value}</dd>
+              {loading ? (
+                <dd>
+                  <StatSkeleton />
+                </dd>
+              ) : (
+                <dd className="mt-1 font-mono text-xl font-medium sm:text-2xl tabular-nums text-foreground">{s.value}</dd>
+              )}
             </div>
           ))}
         </dl>
 
-        {!repos || repos.length === 0 ? (
+        {loading ? (
+          <div
+            role="status"
+            aria-label="Loading watched repos"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          >
+            <RepoCardSkeleton />
+            <RepoCardSkeleton />
+          </div>
+        ) : !repos || repos.length === 0 ? (
           <div className="rounded-lg border border-dashed border-input bg-card px-6 py-16 text-center text-muted-foreground">
             <p className="text-base font-medium text-foreground">No repos watched yet.</p>
             <a href="/repos" className="mt-2 inline-block text-sm text-link hover:underline">
