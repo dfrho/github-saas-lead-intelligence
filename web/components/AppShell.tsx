@@ -16,10 +16,8 @@ const WIDTHS = {
 
 /** Signed-in page frame: navigation plus a padded, centered content column. */
 export function AppShell({ children, width = "wide", className }: AppShellProps) {
-  // The md+ background paints the sidebar column (white + 1px border) down the
-  // full page height, so the sticky nav never leaves a gap below it.
   return (
-    <div className="flex min-h-screen flex-col bg-background md:flex-row md:bg-[linear-gradient(to_right,var(--card)_15rem,var(--border)_15rem,var(--border)_calc(15rem+1px),var(--background)_calc(15rem+1px))]">
+    <div className="flex min-h-screen flex-col bg-background md:flex-row">
       <NavBar />
       <main className="min-w-0 flex-1">
         <div className={cn("mx-auto w-full px-4 py-8 sm:px-6 md:px-8 md:py-10", WIDTHS[width], className)}>

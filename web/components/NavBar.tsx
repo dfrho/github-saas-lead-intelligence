@@ -2,13 +2,32 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, FolderGit2, UserRound, LogOut, Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderGit2,
+  UserRound,
+  LogOut,
+  Menu,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/Logo";
 
 function subscribeNoop() {
   return () => {};
+}
+
+const COLLAPSED_KEY = "repolytics.sidebarCollapsed";
+
+function readCollapsed(): boolean {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem(COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 const LINKS = [
@@ -26,6 +45,23 @@ export function NavBar() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  // Desktop only: icon rail instead of the full sidebar, remembered per browser
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        window.localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        // storage unavailable: the choice just won't persist
+      }
+      return next;
+    });
+  }
+
+  // Hidden visually on the desktop rail, still read by screen readers
+  const railHide = collapsed ? "md:sr-only" : "";
   // Current path for the active-link highlight. Read from location so the
   // nav keeps working wherever next/navigation is mocked; "" on the server.
   const path = useSyncExternalStore(
@@ -48,17 +84,31 @@ export function NavBar() {
   }
 
   return (
+    // The wrapper paints the sidebar column (background and border) down the
+    // full page height on md+. On phones it is display:contents, so the nav
+    // itself is the sticky top bar.
+    <div
+      className={cn(
+        "contents md:block md:shrink-0 md:border-r md:border-border md:bg-card md:transition-[width]",
+        collapsed ? "md:w-16" : "md:w-60"
+      )}
+    >
     <nav
       aria-label="Main"
-      className="sticky top-0 z-30 border-b border-border bg-card md:h-screen md:w-60 md:shrink-0 md:border-b-0 md:border-r"
+      className="sticky top-0 z-30 border-b border-border bg-card md:flex md:h-screen md:flex-col md:border-b-0 md:bg-transparent"
     >
-      <div className="flex h-14 items-center justify-between px-4 md:h-16 md:px-5">
+      <div
+        className={cn(
+          "flex h-14 items-center justify-between px-4 md:h-16",
+          collapsed ? "md:justify-center md:px-0" : "md:px-5"
+        )}
+      >
         <a
           href="/dashboard"
           className="inline-flex items-center gap-2 font-display text-[17px] font-bold tracking-tight text-foreground"
         >
           <LogoMark />
-          <span>Repolytics</span>
+          <span className={railHide}>Repolytics</span>
         </a>
         <button
           type="button"
@@ -75,7 +125,7 @@ export function NavBar() {
       <div
         id="main-nav-links"
         className={cn(
-          "flex-col gap-1 px-3 pb-4 md:flex md:h-[calc(100vh-4rem)] md:pb-5",
+          "flex-col gap-1 px-3 pb-4 md:flex md:flex-1 md:pb-5",
           open ? "flex" : "hidden"
         )}
       >
@@ -85,36 +135,63 @@ export function NavBar() {
             <a
               key={href}
               href={href}
+              title={collapsed ? label : undefined}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex h-11 items-center gap-3 rounded-md px-3 text-sm transition-colors md:h-10",
+                collapsed && "md:justify-center md:px-0",
                 active
                   ? "bg-accent font-medium text-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {label}
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className={railHide}>{label}</span>
             </a>
           );
         })}
 
         <div className="mt-3 border-t border-border pt-3 md:mt-auto">
           {email && (
-            <span className="block truncate px-3 pb-2 text-xs text-muted-foreground" title={email}>
+            <span
+              className={cn("block truncate px-3 pb-2 text-xs text-muted-foreground", collapsed && "md:hidden")}
+              title={email}
+            >
               {email}
             </span>
           )}
           <button
             type="button"
-            onClick={handleSignOut}
-            className="flex h-11 w-full items-center gap-3 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:h-10"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn(
+              "hidden h-10 w-full items-center gap-3 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:flex",
+              collapsed && "md:justify-center md:px-0"
+            )}
           >
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            Sign out
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className={railHide}>Collapse</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            title={collapsed ? "Sign out" : undefined}
+            className={cn(
+              "flex h-11 w-full items-center gap-3 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:h-10",
+              collapsed && "md:justify-center md:px-0"
+            )}
+          >
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className={railHide}>Sign out</span>
           </button>
         </div>
       </div>
     </nav>
+    </div>
   );
 }
