@@ -1,47 +1,88 @@
 @import "tailwindcss";
 
 :root {
-  /* High-contrast slate: cool off-white ground, near-black ink, deep slate primary */
-  --background: #f5f7fa;
-  --foreground: #12161c;
+  /* Graphite: monochrome ink on white, hairline borders, one blue accent
+     reserved for primary emphasis (scores, focus, links). */
+  --background: #fafafa;
+  --foreground: #0a0a0a;
 
   --card: #ffffff;
-  --card-foreground: #12161c;
+  --card-foreground: #0a0a0a;
 
   --popover: #ffffff;
-  --popover-foreground: #12161c;
+  --popover-foreground: #0a0a0a;
 
-  --primary: #2e4257;
+  /* Primary actions are ink-black buttons, like the Graphite mockup */
+  --primary: #0a0a0a;
   --primary-foreground: #ffffff;
 
-  --secondary: #e4e8ee;
-  --secondary-foreground: #12161c;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #0a0a0a;
 
-  --muted: #e4e8ee;
-  --muted-foreground: #46505c;
+  --muted: #f5f5f5;
+  --muted-foreground: #525252;
 
-  --accent: #e4e8ee;
-  --accent-foreground: #12161c;
+  --accent: #f5f5f5;
+  --accent-foreground: #0a0a0a;
 
-  --destructive: #a8433a;
+  --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
 
-  --border: rgba(18, 22, 28, 0.16);
-  --input: rgba(18, 22, 28, 0.28);
-  --ring: #2e4257;
+  --border: #e5e5e5;
+  --input: #d4d4d4;
+  --ring: #0a5bd6;
 
-  /* Brand accent reserved for scores/highlights — distinct from shadcn's structural --accent */
-  --gold: #2e4257;
+  /* Blue accent: links, focus, and the lead score */
+  --gold: #0a5bd6;
   --gold-foreground: #ffffff;
+  --link: #0a5bd6;
 
-  --good: #3f7a4f;
-  --good-bg: #e0efe2;
-  --warn: #8a6d1e;
-  --warn-bg: #f1e9cd;
-  --risk: #a8433a;
-  --risk-bg: #f4ddd7;
+  --good: #15803d;
+  --good-bg: #e8f5ec;
+  --warn: #b45309;
+  --warn-bg: #fdf1e3;
+  --risk: #b91c1c;
+  --risk-bg: #fdeaea;
 
-  --radius: 0.9rem;
+  --code-bg: #0a0a0a;
+
+  --radius: 0.5rem;
+}
+
+/* Dark theme follows the operating system setting */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --card: #111111;
+    --card-foreground: #ededed;
+    --popover: #111111;
+    --popover-foreground: #ededed;
+    --primary: #ededed;
+    --primary-foreground: #0a0a0a;
+    --secondary: #1f1f1f;
+    --secondary-foreground: #ededed;
+    --muted: #1f1f1f;
+    --muted-foreground: #a1a1a1;
+    --accent: #1f1f1f;
+    --accent-foreground: #ededed;
+    --destructive: #f87171;
+    --destructive-foreground: #0a0a0a;
+    --border: #262626;
+    --input: #3a3a3a;
+    --ring: #3b8eff;
+    --gold: #3b8eff;
+    --gold-foreground: #0a0a0a;
+    --link: #5aa0ff;
+    --good: #4ade80;
+    --good-bg: #0f2a1a;
+    --warn: #fbbf24;
+    --warn-bg: #2b1f08;
+    --risk: #f87171;
+    --risk-bg: #2e1111;
+    --code-bg: #1a1a1a;
+  }
 }
 
 @theme inline {
@@ -64,6 +105,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-link: var(--link);
 
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
@@ -74,20 +116,21 @@
   --color-risk: var(--risk);
   --color-risk-bg: var(--risk-bg);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 6px);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: var(--font-work-sans);
-  --font-display: var(--font-schibsted-grotesk);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-work-sans), system-ui, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
 }
 
 ::placeholder {
@@ -96,6 +139,29 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-schibsted-grotesk), system-ui, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   color: var(--foreground);
+  letter-spacing: -0.02em;
 }
+
+/* Rendered Markdown (report synopsis and full report).
+   No typography plugin is installed, so style the elements directly. */
+.prose { line-height: 1.65; overflow-wrap: anywhere; }
+.prose > * + * { margin-top: 0.85em; }
+.prose h1 { font-size: 1.5rem; font-weight: 700; margin-top: 1.6em; }
+.prose h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.6em; padding-bottom: 0.35em; border-bottom: 1px solid var(--border); }
+.prose h3 { font-size: 1.05rem; font-weight: 600; margin-top: 1.4em; }
+.prose > :first-child { margin-top: 0; }
+.prose a { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
+.prose ul { list-style: disc; padding-left: 1.25rem; }
+.prose ol { list-style: decimal; padding-left: 1.25rem; }
+.prose li + li { margin-top: 0.3em; }
+.prose strong { font-weight: 600; }
+.prose blockquote { border-left: 2px solid var(--border); padding-left: 1rem; color: var(--muted-foreground); }
+.prose hr { border: 0; border-top: 1px solid var(--border); }
+.prose code { font-family: var(--font-geist-mono), monospace; font-size: 0.875em; background: var(--muted); border-radius: 4px; padding: 0.1em 0.35em; }
+.prose pre { background: var(--code-bg); color: #f5f5f5; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; overflow-x: auto; }
+.prose pre code { background: transparent; padding: 0; color: inherit; }
+.prose table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.875rem; }
+.prose th, .prose td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+.prose th { background: var(--muted); font-weight: 500; }
