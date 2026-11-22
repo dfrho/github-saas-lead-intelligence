@@ -1,0 +1,49 @@
+name: Supabase keep-alive
+
+# Supabase pauses Free Plan projects after 7 days of low activity.
+# This runs one real database read through the REST API every Saturday night
+# so the project never reaches that threshold.
+#
+# Cron is UTC: 05:00 UTC Sunday = 11 PM Saturday Central Standard Time
+# (midnight during Central Daylight Time).
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   SUPABASE_URL       e.g. https://<project-ref>.supabase.co
+#   SUPABASE_PUBLISHABLE_KEY  the sb_publishable_... key (never a secret or service role key)
+
+on:
+  schedule:
+    - cron: "0 5 * * 0"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: Query Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read one row through PostgREST
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_PUBLISHABLE_KEY}" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY secrets must be set"
+            exit 1
+          fi
+          # Publishable keys go in the apikey header only (they are not JWTs).
+          # RLS returns an empty list to the anon role, but the query still
+          # executes in Postgres, which is what counts as project activity.
+          status=$(curl --silent --show-error --output /dev/null \
+            --write-out "%{http_code}" \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --header "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            "${SUPABASE_URL%/}/rest/v1/watched_repos?select=id&limit=1")
+          echo "Supabase responded with HTTP ${status}"
+          if [ "${status}" != "200" ]; then
+            echo "::error::Keep-alive query failed with HTTP ${status}"
+            exit 1
+          fi
