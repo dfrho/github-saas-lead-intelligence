@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase";
 import { fetchRepos, removeRepo, triggerReport } from "@/lib/api";
 import { AddRepoForm } from "@/components/AddRepoForm";
 import { Button } from "@/components/ui/button";
+import { AppShell, PageHeader } from "@/components/AppShell";
 import {
   Table,
   TableBody,
@@ -54,63 +55,76 @@ export default function ReposPage() {
   if (!token) return null;
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display font-bold text-2xl text-foreground">Watched Repos</h1>
-        <a href="/dashboard" className="text-sm text-primary hover:underline">
-          ← Dashboard
-        </a>
+    <AppShell width="default">
+      <div className="space-y-8">
+        <PageHeader
+          title="Watched Repos"
+          actions={
+            <a href="/dashboard" className="text-sm text-link hover:underline">
+              ← Dashboard
+            </a>
+          }
+        />
+
+        <section className="rounded-lg border border-border bg-card p-5">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">Add a repository</h2>
+          <AddRepoForm token={token} onAdded={() => mutate()} />
+        </section>
+
+        {repos && repos.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <Table className="min-w-[640px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Repo</TableHead>
+                  <TableHead>Label</TableHead>
+                  <TableHead>Last checked</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {repos.map((r) => (
+                  <TableRow key={`${r.owner}/${r.repo}`}>
+                    <TableCell className="font-mono text-sm">{r.owner}/{r.repo}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{r.label}</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                      {r.last_checked
+                        ? new Date(r.last_checked).toLocaleDateString()
+                        : "Never"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-right">
+                      <div className="inline-flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={runningRepo === `${r.owner}/${r.repo}`}
+                          onClick={() => handleRunReport(r.owner, r.repo)}
+                        >
+                          {runningRepo === `${r.owner}/${r.repo}` ? "Running..." : "Run report"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleRemove(r.owner, r.repo)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {repos && repos.length === 0 && (
+          <p className="rounded-lg border border-dashed border-input bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+            No repos watched yet. Add one above.
+          </p>
+        )}
       </div>
-
-      <AddRepoForm token={token} onAdded={() => mutate()} />
-
-      {repos && repos.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Repo</TableHead>
-              <TableHead>Label</TableHead>
-              <TableHead>Last checked</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {repos.map((r) => (
-              <TableRow key={`${r.owner}/${r.repo}`}>
-                <TableCell className="font-mono text-sm">{r.owner}/{r.repo}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{r.label}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {r.last_checked
-                    ? new Date(r.last_checked).toLocaleDateString()
-                    : "Never"}
-                </TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={runningRepo === `${r.owner}/${r.repo}`}
-                    onClick={() => handleRunReport(r.owner, r.repo)}
-                  >
-                    {runningRepo === `${r.owner}/${r.repo}` ? "Running..." : "Run report"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => handleRemove(r.owner, r.repo)}
-                  >
-                    Remove
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {repos && repos.length === 0 && (
-        <p className="text-sm text-muted-foreground">No repos watched yet. Add one above.</p>
-      )}
-    </main>
+    </AppShell>
   );
 }

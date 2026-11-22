@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { fetchProfile, upsertProfile } from "@/lib/api";
-import { NavBar } from "@/components/NavBar";
+import { AppShell, PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,62 +64,59 @@ export default function AccountPage() {
   if (!token) return null;
 
   return (
-    <>
-      <NavBar />
-      <main className="min-h-screen bg-background max-w-lg mx-auto px-4 py-10 space-y-8">
-        <h1 className="font-display font-bold text-2xl text-foreground">Account</h1>
+    <AppShell width="narrow">
+      <div className="space-y-8">
+        <PageHeader title="Account" />
 
-        <div className="bg-muted rounded-2xl p-6 space-y-6">
-          {/* Email — read-only */}
-          <div className="space-y-1">
-            <Label className="text-foreground">Email</Label>
-            <p className="text-sm text-muted-foreground">{email}</p>
+        <section className="rounded-lg border border-border bg-card">
+          <div className="border-b border-border p-5">
+            <h2 className="text-sm font-semibold text-foreground">Profile</h2>
           </div>
+          <div className="space-y-6 p-5">
+            {/* Email: read-only */}
+            <div className="space-y-1.5">
+              <Label className="text-foreground">Email</Label>
+              <p className="break-all text-sm text-muted-foreground">{email}</p>
+            </div>
 
-          {/* Editable profile fields */}
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="company">Company name</Label>
-              <Input
-                id="company"
-                placeholder="e.g. Acme Corp"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="domain">Work domain</Label>
-              <Input
-                id="domain"
-                placeholder="e.g. acme.com"
-                value={workDomain}
-                onChange={(e) => setWorkDomain(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                type="submit"
-                disabled={saving}
-                className="font-display font-semibold"
-              >
-                {saving ? "Saving..." : "Save changes"}
-              </Button>
-              {saved && <span className="text-sm text-good">Saved</span>}
-              {error && <span className="text-sm text-destructive">{error}</span>}
-            </div>
-          </form>
-        </div>
+            {/* Editable profile fields */}
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="company">Company name</Label>
+                <Input
+                  id="company"
+                  placeholder="e.g. Acme Corp"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="domain">Work domain</Label>
+                <Input
+                  id="domain"
+                  placeholder="e.g. acme.com"
+                  value={workDomain}
+                  onChange={(e) => setWorkDomain(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save changes"}
+                </Button>
+                {saved && <span className="text-sm text-good">Saved</span>}
+                {error && <span className="text-sm text-destructive">{error}</span>}
+              </div>
+            </form>
+          </div>
+        </section>
 
-        <div className="bg-muted rounded-2xl p-6">
-          <h2 className="text-sm font-semibold mb-3 text-foreground">Sign out</h2>
-          <Button
-            variant="outline"
-            onClick={handleSignOut}
-          >
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-foreground">Sign out</h2>
+          <Button variant="outline" onClick={handleSignOut}>
             Sign out
           </Button>
-        </div>
-      </main>
-    </>
+        </section>
+      </div>
+    </AppShell>
   );
 }
