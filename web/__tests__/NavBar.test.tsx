@@ -69,4 +69,20 @@ describe("NavBar", () => {
     render(<NavBar />);
     expect(screen.getByText("Account").closest("a")).toHaveAttribute("href", "/account");
   });
+
+  it("collapses to an icon rail and remembers the choice", () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    window.localStorage.removeItem("repolytics.sidebarCollapsed");
+    const { unmount } = render(<NavBar />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("repolytics.sidebarCollapsed")).toBe("1");
+    // Labels stay in the DOM for screen readers while visually hidden
+    expect(screen.getByText("Account").closest("a")).toHaveAttribute("href", "/account");
+    unmount();
+
+    render(<NavBar />);
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+    window.localStorage.removeItem("repolytics.sidebarCollapsed");
+  });
 });

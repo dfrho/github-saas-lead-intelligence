@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { triggerReport } from "@/lib/api";
 import { createClient } from "@/lib/supabase";
+import { LogoMark } from "@/components/Logo";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -42,21 +43,22 @@ export default function LandingPage() {
   }, [reportId, router]);
 
   return (
-    <main className="min-h-screen flex flex-col items-center bg-background px-4">
-      <div className="max-w-lg w-full space-y-8 text-center pt-24 pb-16">
+    <main className="flex min-h-screen flex-col items-center bg-background px-4 sm:px-6">
+      <div className="w-full max-w-xl space-y-8 pb-16 pt-16 text-center sm:pt-28">
         <div>
-          <h1 className="font-display font-bold text-4xl tracking-tight text-foreground">
+          <LogoMark className="mx-auto mb-6 h-12 w-12 text-foreground" />
+          <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
             Repolytics
           </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Turns GitHub commit activity into purchase-intent signals for SaaS sales, BDR, and strategic GTM teams.
+          <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Turns GitHub commit activity into purchase-intent signals for SaaS GTM teams.
           </p>
         </div>
 
         {!reportId ? (
-          <form onSubmit={handleRun} className="space-y-4 text-left">
-            <div className="flex gap-3">
-              <div className="flex-1 space-y-1">
+          <form onSubmit={handleRun} className="space-y-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex-1 space-y-1.5">
                 <Label htmlFor="owner">Owner</Label>
                 <Input
                   id="owner"
@@ -65,7 +67,7 @@ export default function LandingPage() {
                   onChange={(e) => setOwner(e.target.value)}
                 />
               </div>
-              <div className="flex-1 space-y-1">
+              <div className="flex-1 space-y-1.5">
                 <Label htmlFor="repo">Repository</Label>
                 <Input
                   id="repo"
@@ -77,7 +79,8 @@ export default function LandingPage() {
             </div>
             <Button
               type="submit"
-              className="w-full font-display font-semibold"
+              size="lg"
+              className="w-full"
               disabled={loading}
             >
               {loading ? "Starting..." : "Analyze Repository →"}
@@ -85,9 +88,9 @@ export default function LandingPage() {
             {error && <p className="text-sm text-destructive">{error}</p>}
           </form>
         ) : (
-          <div className="space-y-4 text-left bg-muted rounded-xl p-6">
+          <div className="space-y-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
             <p className="text-sm font-medium text-foreground">
-              Analyzing <span className="font-mono">{owner}/{repo}</span>
+              Analyzing <span className="break-all font-mono">{owner}/{repo}</span>
             </p>
             <ProgressIndicator reportId={reportId} onComplete={handleComplete} />
             <p className="text-xs text-muted-foreground">
@@ -99,7 +102,7 @@ export default function LandingPage() {
 
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
-          <a href="/login" className="text-primary hover:underline">Sign in</a>
+          <a href="/login" className="font-medium text-link hover:underline">Sign in</a>
         </p>
       </div>
 
@@ -152,12 +155,12 @@ const REPORT_ITEMS = [
 
 function HowItWorks() {
   return (
-    <div className="w-full max-w-4xl border-t border-border py-16 space-y-16">
+    <div className="w-full max-w-5xl space-y-16 border-t border-border py-16 sm:space-y-20 sm:py-20">
       <section className="max-w-2xl mx-auto text-center space-y-3">
-        <h2 className="font-display font-semibold text-2xl tracking-tight text-foreground">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Code changes come before the RFP
         </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="text-base leading-relaxed text-muted-foreground">
           When an engineering team starts committing heavily to something new, such as a message
           queue, a login system or tracing, they usually go looking for a vendor in that area
           60 to 120 days later. Repolytics watches public repositories for those shifts and tells
@@ -166,13 +169,13 @@ function HowItWorks() {
       </section>
 
       <section className="space-y-6">
-        <h2 className="font-display font-semibold text-xl tracking-tight text-foreground text-center">
+        <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl text-center">
           How it works
         </h2>
         <ol className="grid gap-4 sm:grid-cols-3">
           {STEPS.map((step, i) => (
-            <li key={step.title} className="rounded-xl border border-border bg-card p-5 space-y-2">
-              <span className="font-mono text-xs text-muted-foreground">0{i + 1}</span>
+            <li key={step.title} className="space-y-2 rounded-lg border border-border bg-card p-5">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-foreground font-mono text-xs text-background">0{i + 1}</span>
               <h3 className="font-display font-semibold text-foreground">{step.title}</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             </li>
@@ -181,12 +184,12 @@ function HowItWorks() {
       </section>
 
       <section className="space-y-6">
-        <h2 className="font-display font-semibold text-xl tracking-tight text-foreground text-center">
+        <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl text-center">
           What&apos;s in a report
         </h2>
-        <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+        <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
           {REPORT_ITEMS.map((item) => (
-            <div key={item.title} className="space-y-1">
+            <div key={item.title} className="space-y-1 bg-card p-5">
               <h3 className="font-display font-semibold text-foreground">{item.title}</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">{item.body}</p>
             </div>
@@ -198,11 +201,11 @@ function HowItWorks() {
       </section>
 
       <section className="max-w-2xl mx-auto text-center space-y-3">
-        <h2 className="font-display font-semibold text-xl tracking-tight text-foreground">
+        <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Who it&apos;s for
         </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          SaaS sales, BDR and go-to-market teams selling to engineering organizations. Repolytics
+          SaaS GTM teams selling to engineering organizations. Repolytics
           only reads public repositories and public profile data, and it&apos;s free while we
           collect feedback.
         </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import ReactMarkdown from "react-markdown";
@@ -11,7 +12,7 @@ import { fetchReport, fetchReportStatus, downloadReport } from "@/lib/api";
 import { ScoreBar } from "@/components/ScoreBar";
 import { Button } from "@/components/ui/button";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
-import { NavBar } from "@/components/NavBar";
+import { AppShell } from "@/components/AppShell";
 import { scoreColor } from "@/lib/utils";
 
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -67,21 +68,45 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
   if (isGenerating) {
     return (
-      <main className="min-h-screen bg-background max-w-3xl mx-auto px-4 py-10">
-        <div className="bg-muted rounded-2xl p-8 space-y-4">
-          <h1 className="font-display font-bold text-xl text-foreground">Generating your report...</h1>
+      <AppShell width="default">
+        <div className="space-y-4 rounded-lg border border-border bg-card p-6 sm:p-8">
+          <h1 className="font-display text-xl font-semibold text-foreground">Generating your report...</h1>
           <ProgressIndicator reportId={id} onComplete={handleComplete} />
           <p className="text-sm text-muted-foreground">This usually takes 30–60 seconds.</p>
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   if (!report) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-10">
-        <p className="text-muted-foreground text-sm">Loading report...</p>
-      </main>
+      <AppShell width="default">
+        <p className="text-sm text-muted-foreground" role="status">Loading report...</p>
+      </AppShell>
+    );
+  }
+
+  if (report.status !== "complete") {
+    const failed = report.status.startsWith("error");
+    const reason = failed ? report.status.replace(/^error:\s*/, "") : report.status;
+    return (
+      <AppShell width="default">
+        <div className="space-y-4 rounded-lg border border-border bg-card p-6 sm:p-8">
+          <p className="break-all font-mono text-sm text-muted-foreground">{report.owner}/{report.repo}</p>
+          <h1 className="font-display text-xl font-semibold text-foreground">
+            {failed ? "This report couldn't be generated" : "This report isn't finished"}
+          </h1>
+          <p className="text-sm text-muted-foreground">{reason}</p>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild size="sm">
+              <Link href="/">Run a new report</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/dashboard">Back to dashboard</Link>
+            </Button>
+          </div>
+        </div>
+      </AppShell>
     );
   }
 
@@ -91,147 +116,157 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const contributors = (json?.enrichment as Record<string, unknown>)?.top_contributors as Array<Record<string, unknown>> | undefined;
   const vendors = json?.vendors as Array<Record<string, unknown>> | undefined;
 
-  return (
-    <>
-    <NavBar />
-    <main className="min-h-screen bg-background max-w-3xl mx-auto px-4 py-10 space-y-8">
-      <div className="flex items-center justify-end gap-3">
-        {exportError && <p className="text-sm text-destructive">{exportError}</p>}
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleExport("csv")}>
-            Export CSV
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleExport("txt")}>
-            Export TXT
-          </Button>
-        </div>
-      </div>
+  const sectionTitle = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 
-      {/* ── Summary card ─────────────────────────────────────────────── */}
-      <div className="bg-muted rounded-2xl p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-display font-bold text-lg text-foreground">{report.owner}/{report.repo}</p>
-            <p className="text-xs mt-1 text-muted-foreground">
+  return (
+    <AppShell>
+      <div className="space-y-6">
+        {/* ── Header ───────────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs text-muted-foreground">Lead report</p>
+            <h1 className="break-all font-mono text-xl font-medium text-foreground sm:text-2xl">
+              {report.owner}/{report.repo}
+            </h1>
+            <p className="text-xs text-muted-foreground">
               Generated {new Date(report.run_at).toLocaleString()}
             </p>
           </div>
-          <div className="text-right">
-            <span className={`font-display text-2xl font-bold px-3 py-1 rounded-lg ${scoreColor(report.score_composite)}`}>
-              {report.score_composite}/100
-            </span>
-            {report.confidence_label && (
-              <p className="text-sm mt-1 text-muted-foreground">{report.confidence_label}</p>
-            )}
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => handleExport("csv")}>
+                Export CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleExport("txt")}>
+                Export TXT
+              </Button>
+            </div>
+            {exportError && <p className="text-sm text-destructive">{exportError}</p>}
           </div>
         </div>
-      </div>
 
-      <div className="space-y-8">
-        {/* Score breakdown bars */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Score Breakdown</h3>
-          <ScoreBar label="Activity" score={report.score_activity} weight="25%" />
-          <ScoreBar label="Pain Points" score={report.score_pain_points} weight="25%" />
-          <ScoreBar label="Dependencies" score={report.score_dependencies} weight="20%" />
-          <ScoreBar label="Team Size" score={report.score_team_size} weight="15%" />
-          <ScoreBar label="Growth Signals" score={report.score_growth} weight="15%" />
+        {/* ── Summary card ─────────────────────────────────────────────── */}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-5">
+            <h2 className={sectionTitle}>Lead score</h2>
+            <div className="flex items-end gap-3">
+              <span className={`rounded-md px-3 py-1 font-mono text-3xl font-medium tabular-nums ${scoreColor(report.score_composite)}`}>
+                {report.score_composite}/100
+              </span>
+            </div>
+            {report.confidence_label && (
+              <p className="text-sm text-muted-foreground">{report.confidence_label}</p>
+            )}
+          </div>
+
+          <div className="space-y-4 rounded-lg border border-border bg-card p-5">
+            <h2 className={sectionTitle}>Score Breakdown</h2>
+            <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              <ScoreBar label="Activity" score={report.score_activity} weight="25%" />
+              <ScoreBar label="Pain Points" score={report.score_pain_points} weight="25%" />
+              <ScoreBar label="Dependencies" score={report.score_dependencies} weight="20%" />
+              <ScoreBar label="Team Size" score={report.score_team_size} weight="15%" />
+              <ScoreBar label="Growth Signals" score={report.score_growth} weight="15%" />
+            </div>
+          </div>
         </div>
 
         {/* Outreach angle */}
         {outreachAngle && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Outreach Angle</h3>
+          <section className="rounded-lg border border-border bg-card p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <h2 className={sectionTitle}>Outreach Angle</h2>
               <button
                 onClick={() => { navigator.clipboard.writeText(outreachAngle); setCopied(true); setTimeout(() => setCopied(false), 5000); }}
                 title="Copy outreach angle"
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Copy outreach angle"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
                   <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
                 </svg>
               </button>
-              {copied && <span className="text-xs text-good font-medium">Outreach copied</span>}
+              {copied && <span className="text-xs font-medium text-good" role="status">Outreach copied</span>}
             </div>
-            <p className="text-sm leading-relaxed text-foreground">{outreachAngle}</p>
-          </div>
+            <p className="text-[15px] leading-relaxed text-foreground">{outreachAngle}</p>
+          </section>
         )}
 
-        {/* Top contributors */}
-        {contributors && contributors.length > 0 && (
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest mb-2 text-muted-foreground">Top Contacts</h3>
-            <div className="space-y-2">
-              {contributors.slice(0, 3).map((c) => (
-                <div key={c.login as string} className="flex items-center justify-between text-sm">
-                  <div>
-                    <span className="font-medium text-foreground">{c.name as string || c.login as string}</span>
-                    {c.company ? <span className="text-muted-foreground ml-2">· {String(c.company)}</span> : null}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Top contributors */}
+          {contributors && contributors.length > 0 && (
+            <section className="rounded-lg border border-border bg-card p-5">
+              <h2 className={`${sectionTitle} mb-3`}>Top Contacts</h2>
+              <ul className="divide-y divide-border">
+                {contributors.slice(0, 3).map((c) => (
+                  <li key={c.login as string} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm first:pt-0 last:pb-0">
+                    <div className="min-w-0">
+                      <span className="font-medium text-foreground">{c.name as string || c.login as string}</span>
+                      {c.company ? <span className="ml-2 text-muted-foreground">· {String(c.company)}</span> : null}
+                    </div>
+                    <a
+                      href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${c.name || c.login} ${String(c.company || "").replace(/^@/, "")}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-link hover:underline"
+                    >
+                      Find on LinkedIn →
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Vendor recommendations */}
+          {vendors && vendors.length > 0 && (
+            <section className="space-y-4 rounded-lg border border-border bg-card p-5">
+              <h2 className={sectionTitle}>Vendor Recommendations</h2>
+              {vendors.slice(0, 3).map((v) => (
+                <div key={v.domain as string}>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">
+                    {(v.domain as string).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {((v.vendors as Array<Record<string, string>>) ?? []).slice(0, 2).map((vendor) => (
+                      <span key={vendor.name} className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground">{vendor.name}</span>
+                    ))}
                   </div>
-                  <a
-                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${c.name || c.login} ${String(c.company || "").replace(/^@/, "")}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-semibold text-primary hover:underline"
-                  >
-                    Find on LinkedIn →
-                  </a>
                 </div>
               ))}
+            </section>
+          )}
+        </div>
+
+        {/* ── Synopsis ─────────────────────────────────────────────────── */}
+        {synopsis && (
+          <section className="rounded-lg border border-border bg-card p-5 sm:p-6">
+            <h2 className="mb-3 font-display text-base font-semibold text-foreground">Synopsis</h2>
+            <div className="prose max-w-none text-sm text-foreground">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} disallowedElements={["img"]}>
+                {synopsis}
+              </ReactMarkdown>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Vendor recommendations */}
-        {vendors && vendors.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Vendor Recommendations</h3>
-            {vendors.slice(0, 3).map((v) => (
-              <div key={v.domain as string}>
-                <p className="text-xs font-semibold mb-1.5 text-primary">
-                  {(v.domain as string).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {((v.vendors as Array<Record<string, string>>) ?? []).slice(0, 2).map((vendor) => (
-                    <span key={vendor.name} className="text-xs font-medium bg-muted rounded-full px-3 py-1 text-foreground">{vendor.name}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* ── Full Markdown report ──────────────────────────────────────── */}
+        {report.markdown_body && (
+          <section className="rounded-lg border border-border bg-card p-5 sm:p-8">
+            <h2 className="mb-4 font-display text-base font-semibold text-foreground">Full Report</h2>
+            <div className="prose max-w-none text-sm text-foreground">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+                disallowedElements={["img"]}
+              >
+                {report.markdown_body}
+              </ReactMarkdown>
+            </div>
+          </section>
         )}
       </div>
-
-      {/* ── Synopsis ─────────────────────────────────────────────────── */}
-      {synopsis && (
-        <div>
-          <h2 className="font-display font-bold text-base mb-2 text-foreground">Synopsis</h2>
-          <div className="prose prose-sm max-w-none text-sm leading-relaxed text-foreground">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} disallowedElements={["img"]}>
-              {synopsis}
-            </ReactMarkdown>
-          </div>
-        </div>
-      )}
-
-      {/* ── Full Markdown report ──────────────────────────────────────── */}
-      {report.markdown_body && (
-        <div>
-          <h2 className="font-display font-bold text-base mb-4 text-foreground">Full Report</h2>
-          <div className="prose prose-sm max-w-none bg-muted rounded-2xl p-6 text-foreground">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
-              disallowedElements={["img"]}
-            >
-              {report.markdown_body}
-            </ReactMarkdown>
-          </div>
-        </div>
-      )}
-    </main>
-    </>
+    </AppShell>
   );
 }
