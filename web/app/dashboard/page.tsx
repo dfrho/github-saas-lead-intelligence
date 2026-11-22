@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { createClient } from "@/lib/supabase";
 import { fetchRepos, fetchReports } from "@/lib/api";
 import { RepoCard } from "@/components/RepoCard";
-import { NavBar } from "@/components/NavBar";
+import { AppShell, PageHeader } from "@/components/AppShell";
 import type { ReportSummary } from "@/lib/api";
 
 export default function DashboardPage() {
@@ -44,39 +44,62 @@ export default function DashboardPage() {
     reportsByRepo[key].push(r);
   }
 
-  return (
-    <>
-    <NavBar />
-    <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display font-bold text-2xl text-foreground">Dashboard</h1>
-        <a href="/repos" className="text-sm text-primary hover:underline">
-          Manage repos →
-        </a>
-      </div>
+  // Headline numbers, derived from the data already loaded above
+  const latestScores = Object.values(reportsByRepo)
+    .map((rs) => rs[0]?.score_composite)
+    .filter((s): s is number => typeof s === "number");
+  const stats = [
+    { label: "Watched repos", value: repos?.length ?? 0 },
+    { label: "High-intent leads", value: latestScores.filter((s) => s >= 70).length },
+    { label: "Reports run", value: reports?.length ?? 0 },
+  ];
 
-      {!repos || repos.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <p className="text-lg">No repos watched yet.</p>
-          <a href="/repos" className="text-sm mt-2 inline-block text-primary hover:underline">
-            Add your first repo →
-          </a>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {repos.map((r) => (
-            <RepoCard
-              key={`${r.owner}/${r.repo}`}
-              owner={r.owner}
-              repo={r.repo}
-              label={r.label}
-              lastChecked={r.last_checked}
-              reports={reportsByRepo[`${r.owner}/${r.repo}`] ?? []}
-            />
+  return (
+    <AppShell>
+      <div className="space-y-8">
+        <PageHeader
+          title="Dashboard"
+          actions={
+            <a
+              href="/repos"
+              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Manage repos →
+            </a>
+          }
+        />
+
+        <dl className="grid grid-cols-3 gap-2 sm:gap-3">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-lg border border-border bg-card p-3 sm:p-4">
+              <dt className="text-xs text-muted-foreground">{s.label}</dt>
+              <dd className="mt-1 font-mono text-xl font-medium sm:text-2xl tabular-nums text-foreground">{s.value}</dd>
+            </div>
           ))}
-        </div>
-      )}
-    </main>
-    </>
+        </dl>
+
+        {!repos || repos.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-input bg-card px-6 py-16 text-center text-muted-foreground">
+            <p className="text-base font-medium text-foreground">No repos watched yet.</p>
+            <a href="/repos" className="mt-2 inline-block text-sm text-link hover:underline">
+              Add your first repo →
+            </a>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {repos.map((r) => (
+              <RepoCard
+                key={`${r.owner}/${r.repo}`}
+                owner={r.owner}
+                repo={r.repo}
+                label={r.label}
+                lastChecked={r.last_checked}
+                reports={reportsByRepo[`${r.owner}/${r.repo}`] ?? []}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
