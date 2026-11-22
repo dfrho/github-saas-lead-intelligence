@@ -38,9 +38,12 @@ export function ProgressIndicator({ reportId, onComplete }: ProgressIndicatorPro
   }, [reportId, onComplete]);
 
   return (
-    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-      <span className="inline-block w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      <span>{status}</span>
+    <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status" aria-live="polite">
+      <span
+        className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-foreground border-t-transparent"
+        aria-hidden="true"
+      />
+      <span className="font-mono text-[13px]">{status}</span>
     </div>
   );
 }
