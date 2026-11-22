@@ -37,7 +37,6 @@ def rerank_news(org: str, items: list[dict]) -> list[dict]:
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=300,
-        temperature=0,
         system=UNTRUSTED_SYSTEM,
         messages=[
             {
