@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Repolytics",
-  description: "GitHub repository intelligence for sales teams",
+  description: "Repolytics turns GitHub commit activity into purchase-intent signals for SaaS GTM teams.",
 };
 
 export const viewport: Viewport = {

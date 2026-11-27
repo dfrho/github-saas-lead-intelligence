@@ -31,14 +31,15 @@ describe("LandingPage", () => {
   it("renders the heading and form", () => {
     render(<LandingPage />);
     expect(screen.getByText("Repolytics")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Code changes come before the RFP" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("e.g. stripe")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("e.g. stripe-python")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Analyze Repository/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Get the Lead Report/i })).toBeInTheDocument();
   });
 
   it("disables the button when owner or repo is empty", () => {
     render(<LandingPage />);
-    const button = screen.getByRole("button", { name: /Analyze Repository/i });
+    const button = screen.getByRole("button", { name: /Get the Lead Report/i });
     fireEvent.click(button);
     expect(mockTrigger).not.toHaveBeenCalled();
   });
@@ -49,7 +50,7 @@ describe("LandingPage", () => {
 
     fireEvent.change(screen.getByPlaceholderText("e.g. stripe"), { target: { value: " stripe " } });
     fireEvent.change(screen.getByPlaceholderText("e.g. stripe-python"), { target: { value: " stripe-python " } });
-    fireEvent.click(screen.getByRole("button", { name: /Analyze Repository/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Get the Lead Report/i }));
 
     await waitFor(() => expect(mockTrigger).toHaveBeenCalledWith("stripe", "stripe-python", null));
   });
@@ -60,7 +61,7 @@ describe("LandingPage", () => {
 
     fireEvent.change(screen.getByPlaceholderText("e.g. stripe"), { target: { value: "stripe" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. stripe-python"), { target: { value: "stripe-python" } });
-    fireEvent.click(screen.getByRole("button", { name: /Analyze Repository/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Get the Lead Report/i }));
 
     await waitFor(() => expect(screen.getByText("Network error")).toBeInTheDocument());
   });
@@ -71,7 +72,7 @@ describe("LandingPage", () => {
 
     fireEvent.change(screen.getByPlaceholderText("e.g. stripe"), { target: { value: "stripe" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. stripe-python"), { target: { value: "stripe-python" } });
-    fireEvent.click(screen.getByRole("button", { name: /Analyze Repository/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Get the Lead Report/i }));
 
     await waitFor(() => expect(screen.getByText(/stripe\/stripe-python/)).toBeInTheDocument());
   });

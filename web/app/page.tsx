@@ -46,12 +46,18 @@ export default function LandingPage() {
     <main className="flex min-h-screen flex-col items-center bg-background px-4 sm:px-6">
       <div className="w-full max-w-xl space-y-8 pb-16 pt-16 text-center sm:pt-28">
         <div>
-          <LogoMark className="mx-auto mb-6 h-12 w-12 text-foreground" />
+          <div className="mb-8 flex items-center justify-center gap-2.5">
+            <LogoMark className="h-8 w-8 text-foreground" />
+            <span className="font-display text-xl font-bold tracking-tight text-foreground">Repolytics</span>
+          </div>
           <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-            Repolytics
+            Code changes come before the RFP
           </h1>
           <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Turns GitHub commit activity into purchase-intent signals for SaaS GTM teams.
+            Repolytics turns GitHub commit activity into purchase-intent signals for SaaS GTM teams.
+          </p>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+            Enter any public repository to see what the team is building and who to talk to.
           </p>
         </div>
 
@@ -83,7 +89,7 @@ export default function LandingPage() {
               className="w-full"
               disabled={loading}
             >
-              {loading ? "Starting..." : "Analyze Repository →"}
+              {loading ? "Starting..." : "Get the Lead Report →"}
             </Button>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </form>
@@ -158,13 +164,25 @@ function HowItWorks() {
     <div className="w-full max-w-5xl space-y-16 border-t border-border py-16 sm:space-y-20 sm:py-20">
       <section className="max-w-2xl mx-auto text-center space-y-3">
         <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Code changes come before the RFP
+          Why Repolytics exists
         </h2>
         <p className="text-base leading-relaxed text-muted-foreground">
           When an engineering team starts committing heavily to something new, such as a message
-          queue, a login system or tracing, they usually go looking for a vendor in that area
-          60 to 120 days later. Repolytics watches public repositories for those shifts and tells
-          you which accounts are about to be in market, what they need, and who to talk to.
+          queue, a login system or tracing, it tends to go looking for a vendor in that area
+          60 to 120 days later. That&apos;s the premise we&apos;re testing during the free period.
+          Repolytics watches public repositories for those shifts and tells you which accounts are
+          about to be in market, what they need, and who to talk to.
+        </p>
+      </section>
+
+      <section className="max-w-2xl mx-auto text-center space-y-3">
+        <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+          Who it&apos;s for
+        </h2>
+        <p className="text-base leading-relaxed text-muted-foreground">
+          SaaS GTM teams selling to engineering organizations. If you sell in a category like auth,
+          observability, messaging, payments or data infrastructure, Repolytics shows you which
+          teams have started work in your area.
         </p>
       </section>
 
@@ -200,16 +218,10 @@ function HowItWorks() {
         </p>
       </section>
 
-      <section className="max-w-2xl mx-auto text-center space-y-3">
-        <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-          Who it&apos;s for
-        </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          SaaS GTM teams selling to engineering organizations. Repolytics
-          only reads public repositories and public profile data, and it&apos;s free while we
-          collect feedback.
-        </p>
-      </section>
+      <p className="text-sm text-muted-foreground text-center">
+        Repolytics only reads public repositories and public profile data, and it&apos;s free
+        while we collect feedback.
+      </p>
     </div>
   );
 }
