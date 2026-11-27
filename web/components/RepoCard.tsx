@@ -52,7 +52,7 @@ export function RepoCard({ owner, repo, label, lastChecked, reports }: RepoCardP
           </p>
           {latest && (
             <span className="inline-flex items-center text-xs font-medium text-link">
-              View Report →
+              View report →
             </span>
           )}
         </div>
@@ -79,11 +79,11 @@ export function RepoCard({ owner, repo, label, lastChecked, reports }: RepoCardP
             <Link
               key={r.id}
               href={`/reports/${r.id}`}
-              className="flex min-h-9 items-center justify-between rounded px-1 text-xs text-foreground transition-colors hover:bg-accent"
+              className="flex min-h-9 items-center justify-between rounded-md px-1 text-xs text-foreground transition-colors hover:bg-accent"
             >
               <span>{new Date(r.run_at).toLocaleDateString()}</span>
               {r.score_composite !== null && (
-                <span className={`rounded px-1.5 py-0.5 font-mono font-medium tabular-nums ${scoreColor(r.score_composite)}`}>
+                <span className={`rounded-md px-1.5 py-0.5 font-mono font-medium tabular-nums ${scoreColor(r.score_composite)}`}>
                   {r.score_composite}/100
                 </span>
               )}

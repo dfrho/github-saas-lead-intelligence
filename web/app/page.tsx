@@ -50,7 +50,7 @@ export default function LandingPage() {
             <LogoMark className="h-8 w-8 text-foreground" />
             <span className="font-display text-xl font-bold tracking-tight text-foreground">Repolytics</span>
           </div>
-          <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
+          <h1 className="font-display text-4xl font-bold tracking-tight text-balance text-foreground sm:text-6xl">
             Code changes come before the RFP
           </h1>
           <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -89,7 +89,7 @@ export default function LandingPage() {
               className="w-full"
               disabled={loading}
             >
-              {loading ? "Starting..." : "Get the Lead Report →"}
+              {loading ? "Starting..." : "Get the lead report →"}
             </Button>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </form>
@@ -166,7 +166,7 @@ function HowItWorks() {
         <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Why Repolytics exists
         </h2>
-        <p className="text-base leading-relaxed text-muted-foreground">
+        <p className="text-left text-base leading-relaxed text-muted-foreground sm:text-center">
           When an engineering team starts committing heavily to something new, such as a message
           queue, a login system or tracing, it tends to go looking for a vendor in that area
           60 to 120 days later. That&apos;s the premise we&apos;re testing during the free period.
@@ -179,7 +179,7 @@ function HowItWorks() {
         <h2 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Who it&apos;s for
         </h2>
-        <p className="text-base leading-relaxed text-muted-foreground">
+        <p className="text-left text-base leading-relaxed text-muted-foreground sm:text-center">
           SaaS GTM teams selling to engineering organizations. If you sell in a category like auth,
           observability, messaging, payments or data infrastructure, Repolytics shows you which
           teams have started work in your area.

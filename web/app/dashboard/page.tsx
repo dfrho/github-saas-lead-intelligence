@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase";
 import { fetchRepos, fetchReports } from "@/lib/api";
 import { RepoCard } from "@/components/RepoCard";
@@ -66,12 +68,9 @@ export default function DashboardPage() {
         <PageHeader
           title="Dashboard"
           actions={
-            <a
-              href="/repos"
-              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Manage repos →
-            </a>
+            <Button asChild>
+              <Link href="/repos">Manage repos →</Link>
+            </Button>
           }
         />
 
@@ -102,9 +101,9 @@ export default function DashboardPage() {
         ) : !repos || repos.length === 0 ? (
           <div className="rounded-lg border border-dashed border-input bg-card px-6 py-16 text-center text-muted-foreground">
             <p className="text-base font-medium text-foreground">No repos watched yet.</p>
-            <a href="/repos" className="mt-2 inline-block text-sm text-link hover:underline">
+            <Link href="/repos" className="mt-2 inline-block text-sm text-link hover:underline">
               Add your first repo →
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

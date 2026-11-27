@@ -13,6 +13,7 @@ import { ScoreBar } from "@/components/ScoreBar";
 import { Button } from "@/components/ui/button";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { AppShell } from "@/components/AppShell";
+import { ReportSkeleton } from "@/components/ReportSkeleton";
 import { scoreColor } from "@/lib/utils";
 
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -80,8 +81,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
   if (!report) {
     return (
-      <AppShell width="default">
-        <p className="text-sm text-muted-foreground" role="status">Loading report...</p>
+      <AppShell>
+        <ReportSkeleton />
       </AppShell>
     );
   }
@@ -160,13 +161,13 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           </div>
 
           <div className="space-y-4 rounded-lg border border-border bg-card p-5">
-            <h2 className={sectionTitle}>Score Breakdown</h2>
+            <h2 className={sectionTitle}>Score breakdown</h2>
             <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
               <ScoreBar label="Activity" score={report.score_activity} weight="25%" />
-              <ScoreBar label="Pain Points" score={report.score_pain_points} weight="25%" />
+              <ScoreBar label="Pain points" score={report.score_pain_points} weight="25%" />
               <ScoreBar label="Dependencies" score={report.score_dependencies} weight="20%" />
-              <ScoreBar label="Team Size" score={report.score_team_size} weight="15%" />
-              <ScoreBar label="Growth Signals" score={report.score_growth} weight="15%" />
+              <ScoreBar label="Team size" score={report.score_team_size} weight="15%" />
+              <ScoreBar label="Growth signals" score={report.score_growth} weight="15%" />
             </div>
           </div>
         </div>
@@ -175,9 +176,17 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         {outreachAngle && (
           <section className="rounded-lg border border-border bg-card p-5">
             <div className="mb-3 flex items-center gap-2">
-              <h2 className={sectionTitle}>Outreach Angle</h2>
+              <h2 className={sectionTitle}>Outreach angle</h2>
               <button
-                onClick={() => { navigator.clipboard.writeText(outreachAngle); setCopied(true); setTimeout(() => setCopied(false), 5000); }}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(outreachAngle);
+                  } catch {
+                    return;
+                  }
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 5000);
+                }}
                 title="Copy outreach angle"
                 aria-label="Copy outreach angle"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -197,7 +206,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           {/* Top contributors */}
           {contributors && contributors.length > 0 && (
             <section className="rounded-lg border border-border bg-card p-5">
-              <h2 className={`${sectionTitle} mb-3`}>Top Contacts</h2>
+              <h2 className={`${sectionTitle} mb-3`}>Top contacts</h2>
               <ul className="divide-y divide-border">
                 {contributors.slice(0, 3).map((c) => (
                   <li key={c.login as string} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm first:pt-0 last:pb-0">
@@ -222,7 +231,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           {/* Vendor recommendations */}
           {vendors && vendors.length > 0 && (
             <section className="space-y-4 rounded-lg border border-border bg-card p-5">
-              <h2 className={sectionTitle}>Vendor Recommendations</h2>
+              <h2 className={sectionTitle}>Vendor recommendations</h2>
               {vendors.slice(0, 3).map((v) => (
                 <div key={v.domain as string}>
                   <p className="mb-1.5 text-sm font-medium text-foreground">
@@ -254,7 +263,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         {/* ── Full Markdown report ──────────────────────────────────────── */}
         {report.markdown_body && (
           <section className="rounded-lg border border-border bg-card p-5 sm:p-8">
-            <h2 className="mb-4 font-display text-base font-semibold text-foreground">Full Report</h2>
+            <h2 className="mb-4 font-display text-base font-semibold text-foreground">Full report</h2>
             <div className="prose max-w-none text-sm text-foreground">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
