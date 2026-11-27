@@ -54,9 +54,9 @@ describe("RepoCard", () => {
     expect(screen.getByText(/Last checked/)).toBeInTheDocument();
   });
 
-  it("shows no score or View Report when there are no reports", () => {
+  it("shows no score or View report when there are no reports", () => {
     render(<RepoCard owner="stripe" repo="stripe-python" label="Stripe Python" lastChecked={null} reports={[]} />);
-    expect(screen.queryByText(/View Report/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/View report/)).not.toBeInTheDocument();
     expect(screen.queryByText(/\/100/)).not.toBeInTheDocument();
   });
 
@@ -68,7 +68,7 @@ describe("RepoCard", () => {
 
   it("links the card to the latest report", () => {
     render(<RepoCard owner="stripe" repo="stripe-python" label="Stripe Python" lastChecked={null} reports={[LATEST]} />);
-    const link = screen.getByText("View Report →").closest("a");
+    const link = screen.getByText("View report →").closest("a");
     expect(link).toHaveAttribute("href", "/reports/report-1");
   });
 
